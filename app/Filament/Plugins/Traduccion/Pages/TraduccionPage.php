@@ -5,6 +5,7 @@ namespace App\Filament\Plugins\Traduccion\Pages;
 use App\Models\PresupAdjAsignacion;
 use App\Services\PermissionService;
 use App\Services\PdfOriginalService;
+use App\Services\TraduccionAiService;
 use Filament\Pages\Page;
 use Filament\Support\Enums\Width;
 use Illuminate\Support\Facades\Route;
@@ -19,6 +20,9 @@ class TraduccionPage extends Page
     public ?int $latestVersion = null;
     public $traductoresAsignados = [];
     public ?string $pdfOriginalUrl = null;
+    public ?string $documentoV1Url = null;
+    public bool $documentoTraducido = false;
+    public string $targetLanguage = 'es';
 
     protected function getViewData(): array
     {
@@ -26,6 +30,9 @@ class TraduccionPage extends Page
             'documento' => $this->asignacion->adjunto,
             'traductoresAsignados' => $this->traductoresAsignados,
             'pdfOriginalUrl' => $this->pdfOriginalUrl,
+            'documentoV1Url' => $this->documentoV1Url,
+            'documentoTraducido' => $this->documentoTraducido,
+            'targetLanguage' => $this->targetLanguage,
         ]);
     }
 
@@ -76,7 +83,42 @@ class TraduccionPage extends Page
         $pdfService = app(PdfOriginalService::class);
         $this->pdfOriginalUrl = $pdfService->obtenerPdfOriginal($this->asignacion);
 
+        // Obtener documento V1 si existe (traducción para esta asignación)
+        $presupuesto = $this->asignacion->adjunto->presupuesto;
+        if ($presupuesto) {
+            $dirV1 = public_path("archivos/traducciones/{$presupuesto->id_pres}/{$this->asignacion->id}");
+            if (is_dir($dirV1) && file_exists("{$dirV1}/documento_V1.docx")) {
+                $this->documentoV1Url = "/archivos/traducciones/{$presupuesto->id_pres}/{$this->asignacion->id}/documento_V1.docx";
+                $this->documentoTraducido = true;
+            }
+        }
+
+        // Obtener idioma destino del asignación
+        if ($this->asignacion->id_idiom) {
+            $this->targetLanguage = $this->getLanguageCode($this->asignacion->id_idiom);
+        }
+
         // Obtener última versión (será obtenida en la vista)
+    }
+
+    /**
+     * Mapea ID de idioma a código de Azure Translator
+     */
+    private function getLanguageCode(int $idIdiom): string
+    {
+        return match ($idIdiom) {
+            1 => 'es',      // Español
+            2 => 'en',      // Inglés
+            3 => 'pt',      // Portugués
+            4 => 'fr',      // Francés
+            5 => 'de',      // Alemán
+            6 => 'it',      // Italiano
+            7 => 'ja',      // Japonés
+            8 => 'zh',      // Chino
+            9 => 'ru',      // Ruso
+            10 => 'ar',     // Árabe
+            default => 'es',
+        };
     }
 
     public function getTitle(): string

@@ -3,6 +3,9 @@
 <!-- PDF.js desde CDN más estable -->
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
 
+<!-- OnlyOffice API -->
+<script src="https://ds.onioffice.com/web-apps/apps/api/documents/api.js"></script>
+
 <style>
     /* Ocultar sidebar, titulo de Filament, encabezado y topbar */
     [data-sidebar], .fi-sidebar, aside[data-sidebar],
@@ -187,6 +190,12 @@
         font-weight: 600;
         margin-top: 0.5rem;
     }
+
+    @keyframes progress {
+        0% { width: 0%; }
+        50% { width: 70%; }
+        100% { width: 100%; }
+    }
 </style>
 
 <div class="traduccion-wrapper">
@@ -224,12 +233,28 @@
                 <h2>TRADUCCIÓN (V{{ $latestVersion ?? 1 }})</h2>
             </div>
             <div class="traduccion-panel-content">
-                <div style="margin-bottom: 1rem;">
-                    ✏️ <strong>Editor OnlyOffice</strong>
-                </div>
-                <p style="margin-top: 1rem;">
-                    El documento editable se cargará en OnlyOffice con JWT.
-                </p>
+                @if($documentoTraducido)
+                    <div id="onlyoffice-container" style="width: 100%; height: 100%;"></div>
+                @else
+                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 1.5rem;">
+                        <div style="text-align: center;">
+                            <p style="margin: 0; color: #6b7280; font-size: 0.875rem; margin-bottom: 0.5rem;">
+                                Este documento aún no ha sido traducido
+                            </p>
+                            <button id="btn-traducir-ia" type="button" style="padding: 0.75rem 1.5rem; background: #f59e0b; color: white; border: none; border-radius: 0.375rem; font-weight: 600; cursor: pointer; font-size: 0.875rem;">
+                                🤖 Traducir con IA
+                            </button>
+                        </div>
+                        <div id="traduccion-progress" style="display: none; text-align: center;">
+                            <p style="margin: 0; color: #6b7280; font-size: 0.875rem;">
+                                Traduciendo documento... Por favor espere
+                            </p>
+                            <div style="margin-top: 1rem; width: 200px; height: 4px; background: #e5e7eb; border-radius: 2px; overflow: hidden;">
+                                <div style="height: 100%; background: #3b82f6; animation: progress 2s infinite; width: 30%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                @endif
             </div>
         </div>
 
@@ -357,6 +382,79 @@
     document.addEventListener('keydown', (e) => {
         if (e.key === 'ArrowLeft') renderPage(currentPage - 1);
         if (e.key === 'ArrowRight') renderPage(currentPage + 1);
+    });
+    @endif
+</script>
+
+{{-- Script para Traducción AI y OnlyOffice --}}
+<script>
+    @if(!$documentoTraducido)
+    // Botón para traducir con IA
+    document.getElementById('btn-traducir-ia')?.addEventListener('click', async function() {
+        const btn = this;
+        const progress = document.getElementById('traduccion-progress');
+
+        btn.style.display = 'none';
+        progress.style.display = 'block';
+
+        try {
+            const response = await fetch('/admin/traduccion/traducir-ai/{{ $asignacion->id }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                },
+                body: JSON.stringify({
+                    targetLanguage: '{{ $targetLanguage }}',
+                }),
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                // Recargar página para mostrar OnlyOffice
+                window.location.reload();
+            } else {
+                alert('Error: ' + (data.message || 'Error desconocido'));
+                btn.style.display = 'block';
+                progress.style.display = 'none';
+            }
+        } catch (error) {
+            console.error('Error traduciendo:', error);
+            alert('Error al traducir: ' + error.message);
+            btn.style.display = 'block';
+            progress.style.display = 'none';
+        }
+    });
+    @else
+    // Inicializar OnlyOffice si el documento ya está traducido
+    document.addEventListener('DOMContentLoaded', function() {
+        const config = {
+            "document": {
+                "fileType": "docx",
+                "key": "{{ md5($documentoV1Url . time()) }}",
+                "title": "Documento Traducción",
+                "url": "{{ $documentoV1Url }}"
+            },
+            "documentType": "text",
+            "editorConfig": {
+                "callbackUrl": "/api/onlyoffice/callback",
+                "mode": "edit",
+                "user": {
+                    "id": "{{ auth()->id() }}",
+                    "name": "{{ auth()->user()->name ?? 'Usuario' }}"
+                }
+            },
+            "height": "100%",
+            "width": "100%"
+        };
+
+        if (typeof DocsAPI !== 'undefined') {
+            new DocsAPI.DocEditor('onlyoffice-container', config);
+        } else {
+            console.error('OnlyOffice API no cargó correctamente');
+            document.getElementById('onlyoffice-container').innerHTML = '<p style="color: #ef4444;">Error al cargar OnlyOffice</p>';
+        }
     });
     @endif
 </script>
