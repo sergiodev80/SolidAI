@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\PresupAdjAsignacion;
 use App\Services\OnlyOfficeService;
-use App\Services\DocumentVersionService;
+use App\Services\DocumentVersioningService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -100,18 +100,28 @@ class OnlyOfficeCallbackController extends Controller
             }
 
             // Extraer información del documento desde el callback
-            // La URL puede contener el ID de la asignación o el documento
             $key = $data['key'] ?? null;
+            $users = $data['users'] ?? [];
 
             Log::info("Documento descargado de OnlyOffice y listo para guardar", [
                 'key' => $key,
                 'size' => strlen($documentContent),
+                'users' => $users,
             ]);
 
-            // Aquí iría la lógica para:
-            // 1. Guardar nueva versión (V2, V3, etc.)
-            // 2. Detectar cambios entre versiones
-            // 3. Crear registro de cambios
+            // Aquí iría la lógica para obtener el ID de asignación desde el key
+            // Por ahora, solo guardar los cambios
+            // TODO: Implementar mapeo de key a id_asignacion
+
+            // Crear log de cambios
+            $changeLog = [
+                'usuarios_editaron' => $users,
+                'timestamp_callback' => now()->toIso8601String(),
+            ];
+
+            // TODO: Guardar nueva versión usando DocumentVersioningService
+            // $versioningService = app(DocumentVersioningService::class);
+            // $versioningService->saveNewVersion($asignacion, $documentContent, $changeLog);
 
             return response()->json(['error' => 0]);
         } catch (\Exception $e) {
