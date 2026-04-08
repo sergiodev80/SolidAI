@@ -1,5 +1,20 @@
 <x-filament-panels::page>
 
+<style>
+    /* Ocultar sidebar de Filament */
+    [data-sidebar],
+    .fi-sidebar,
+    aside[data-sidebar] {
+        display: none !important;
+    }
+
+    /* Expandir contenido a fullscreen */
+    main,
+    [role="main"] {
+        margin-left: 0 !important;
+    }
+</style>
+
 <div class="traduccion-wrapper" style="display: flex; flex-direction: column; height: calc(100vh - 80px); background: white; margin: -1.5rem -1.5rem 0 -1.5rem; padding: 0;">
 
     {{-- Header --}}
