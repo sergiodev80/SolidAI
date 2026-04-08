@@ -1,7 +1,7 @@
 <x-filament-panels::page>
 
 <style>
-    /* Ocultar sidebar y titulo de Filament */
+    /* Ocultar sidebar, titulo de Filament y encabezado */
     [data-sidebar], .fi-sidebar, aside[data-sidebar],
     .fi-page-header, [class*="PageHeader"], h1.fi-page-title, .fi-header {
         display: none !important;
@@ -10,20 +10,6 @@
     /* Expandir contenido a fullscreen */
     main, [role="main"] {
         margin-left: 0 !important;
-    }
-
-    /* Variables de colores para light/dark */
-    :root {
-        --color-bg-light: #ffffff;
-        --color-bg-light-secondary: #f9fafb;
-        --color-bg-dark: #111827;
-        --color-bg-dark-secondary: #1f2937;
-        --color-text-light: #111827;
-        --color-text-light-secondary: #6b7280;
-        --color-text-dark: #f3f4f6;
-        --color-text-dark-secondary: #9ca3af;
-        --color-border-light: #e5e7eb;
-        --color-border-dark: #374151;
     }
 
     .traduccion-wrapper {
@@ -35,53 +21,8 @@
         padding: 0;
     }
 
-    @media (prefers-color-scheme: dark) {
-        .traduccion-wrapper {
-            background: #111827;
-        }
-    }
-
     .traduccion-header {
-        padding: 1.5rem;
-        border-bottom: 1px solid;
-        border-color: #e5e7eb;
-        background: #f9fafb;
-        flex-shrink: 0;
-    }
-
-    @media (prefers-color-scheme: dark) {
-        .traduccion-header {
-            background: #1f2937;
-            border-color: #374151;
-        }
-    }
-
-    .traduccion-header h1 {
-        font-size: 1.5rem;
-        font-weight: 700;
-        margin: 0 0 0.5rem 0;
-        color: #111827;
-    }
-
-    @media (prefers-color-scheme: dark) {
-        .traduccion-header h1 {
-            color: #f3f4f6;
-        }
-    }
-
-    .traduccion-header-meta {
-        font-size: 0.875rem;
-        color: #6b7280;
-    }
-
-    @media (prefers-color-scheme: dark) {
-        .traduccion-header-meta {
-            color: #9ca3af;
-        }
-    }
-
-    .traduccion-header-meta span {
-        margin-right: 1rem;
+        display: none;
     }
 
     .traduccion-container {
@@ -94,29 +35,14 @@
         display: flex;
         flex-direction: column;
         overflow: hidden;
-        border-right: 1px solid;
-        border-color: #e5e7eb;
-    }
-
-    @media (prefers-color-scheme: dark) {
-        .traduccion-panel {
-            border-color: #374151;
-        }
+        border-right: 1px solid #e5e7eb;
     }
 
     .traduccion-panel-header {
         padding: 1rem;
-        border-bottom: 1px solid;
-        border-color: #e5e7eb;
+        border-bottom: 1px solid #e5e7eb;
         background: #f9fafb;
         flex-shrink: 0;
-    }
-
-    @media (prefers-color-scheme: dark) {
-        .traduccion-panel-header {
-            background: #1f2937;
-            border-color: #374151;
-        }
     }
 
     .traduccion-panel-header h2 {
@@ -126,12 +52,6 @@
         margin: 0;
     }
 
-    @media (prefers-color-scheme: dark) {
-        .traduccion-panel-header h2 {
-            color: #e5e7eb;
-        }
-    }
-
     .traduccion-panel-content {
         flex: 1;
         overflow-y: auto;
@@ -139,13 +59,6 @@
         background: #ffffff;
         color: #6b7280;
         font-size: 0.875rem;
-    }
-
-    @media (prefers-color-scheme: dark) {
-        .traduccion-panel-content {
-            background: #111827;
-            color: #d1d5db;
-        }
     }
 
     .panel-original {
@@ -162,27 +75,13 @@
         background: #fafafa;
     }
 
-    @media (prefers-color-scheme: dark) {
-        .panel-cambios {
-            background: #0f172a;
-        }
-    }
-
     .traduccion-footer {
         padding: 1rem 1.5rem;
-        border-top: 1px solid;
-        border-color: #e5e7eb;
+        border-top: 1px solid #e5e7eb;
         background: #f9fafb;
         display: flex;
         gap: 0.5rem;
         flex-shrink: 0;
-    }
-
-    @media (prefers-color-scheme: dark) {
-        .traduccion-footer {
-            background: #1f2937;
-            border-color: #374151;
-        }
     }
 
     .traduccion-btn {
@@ -237,21 +136,9 @@
         color: #6b7280;
     }
 
-    @media (prefers-color-scheme: dark) {
-        .page-meta {
-            color: #9ca3af;
-        }
-    }
-
     .page-meta strong {
         color: #374151;
         font-weight: 600;
-    }
-
-    @media (prefers-color-scheme: dark) {
-        .page-meta strong {
-            color: #e5e7eb;
-        }
     }
 
     .cambios-divider {
@@ -259,24 +146,9 @@
         border-top: 1px solid #e5e7eb;
         margin: 1rem 0;
     }
-
-    @media (prefers-color-scheme: dark) {
-        .cambios-divider {
-            border-top-color: #374151;
-        }
-    }
 </style>
 
 <div class="traduccion-wrapper">
-
-    {{-- Header --}}
-    <div class="traduccion-header">
-        <h1>Traducción — {{ $asignacion->adjunto->nombre_archivo ?? '' }}</h1>
-        <div class="traduccion-header-meta">
-            <span>Páginas asignadas: <strong>{{ $asignacion->pag_inicio }} - {{ $asignacion->pag_fin }}</strong></span>
-            <span class="estado-badge">{{ $asignacion->estado }}</span>
-        </div>
-    </div>
 
     {{-- 3 Paneles --}}
     <div class="traduccion-container">
