@@ -8,12 +8,12 @@ use Exception;
 
 class DocumentVersionService
 {
-    private string $basePath;
+    private ?string $basePath;
     private int $maxVersions;
 
     public function __construct()
     {
-        $this->basePath = config('traduccion.storage.path');
+        $this->basePath = config('traduccion.storage.path') ?? 'archivos/traducciones';
         $this->maxVersions = config('traduccion.storage.max_versions', 5);
     }
 

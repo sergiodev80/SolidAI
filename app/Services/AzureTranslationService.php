@@ -9,15 +9,15 @@ use Exception;
 
 class AzureTranslationService
 {
-    private string $ftpHost;
-    private string $ftpUsername;
-    private string $ftpPassword;
+    private ?string $ftpHost;
+    private ?string $ftpUsername;
+    private ?string $ftpPassword;
     private int $ftpPort;
-    private string $docIntelligenceEndpoint;
-    private string $docIntelligenceKey;
-    private string $translatorEndpoint;
-    private string $translatorKey;
-    private string $translatorRegion;
+    private ?string $docIntelligenceEndpoint;
+    private ?string $docIntelligenceKey;
+    private ?string $translatorEndpoint;
+    private ?string $translatorKey;
+    private ?string $translatorRegion;
 
     public function __construct()
     {
