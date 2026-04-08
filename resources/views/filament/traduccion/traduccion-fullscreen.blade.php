@@ -2,7 +2,6 @@
 
 <!-- PDF.js -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script>pdfjsWorker = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
 
 <style>
     /* Ocultar sidebar, titulo de Filament, encabezado y topbar */
@@ -286,8 +285,7 @@
 <script>
     @if($pdfOriginalUrl)
     // Configurar PDF.js
-    const pdfjsLib = window['pdfjs-dist/build/pdf'];
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    pdfjsWorker.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
     let pdfDoc = null;
     let currentPage = 1;
@@ -304,7 +302,7 @@
     const zoomSlider = document.getElementById('zoom-slider');
 
     // Cargar PDF
-    pdfjsLib.getDocument(pdfUrl).promise.then(pdf => {
+    pdfjsWorker.getDocument(pdfUrl).promise.then(pdf => {
         pdfDoc = pdf;
         totalPages = pdf.numPages;
         totalPagesSpan.textContent = totalPages;
