@@ -10,15 +10,18 @@
 
     /* Expandir contenido a fullscreen */
     main, [role="main"] {
-        margin-left: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        height: 100vh;
+        overflow: hidden;
     }
 
     .traduccion-wrapper {
         display: flex;
         flex-direction: column;
-        height: calc(100vh - 80px);
+        height: 100vh;
         background: white;
-        margin: -1.5rem -1.5rem 0 -1.5rem;
+        margin: 0;
         padding: 0;
     }
 
