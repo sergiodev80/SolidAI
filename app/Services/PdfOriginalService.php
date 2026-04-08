@@ -53,15 +53,13 @@ class PdfOriginalService
     private function descargarDelFtp(PresupAdjAsignacion $asignacion, string $rutaLocal, string $nombreArchivo, string $directorioLocal): ?string
     {
         try {
-            // Obtener ruta en FTP
-            $ftpRoot = config('filesystems.disks.presupuestos_ftp.root', '/');
-            $rutaFtp = trim($ftpRoot, '/') . '/' . trim($nombreArchivo, '/');
-
             // Conectar a FTP
             $filesystem = $this->getFtpFilesystem();
 
-            if (!$filesystem->fileExists($rutaFtp)) {
-                Log::warning("PDF no encontrado en FTP: {$rutaFtp}");
+            // El nombre_archivo es relativo a PRESUP_FTP_ROOT
+            // Por ejemplo: "chacomer MD47 8600265440 coA.pdf"
+            if (!$filesystem->fileExists($nombreArchivo)) {
+                Log::warning("PDF no encontrado en FTP: {$nombreArchivo}");
                 return null;
             }
 
@@ -71,7 +69,7 @@ class PdfOriginalService
             }
 
             // Descargar archivo
-            $contenido = $filesystem->read($rutaFtp);
+            $contenido = $filesystem->read($nombreArchivo);
 
             // Guardar localmente
             $nombreLocal = 'documento_original.' . pathinfo($nombreArchivo, PATHINFO_EXTENSION);
@@ -79,7 +77,7 @@ class PdfOriginalService
 
             file_put_contents($rutaCompleta, $contenido);
 
-            Log::info("PDF descargado desde FTP: {$rutaFtp} -> {$rutaCompleta}");
+            Log::info("PDF descargado desde FTP: {$nombreArchivo} -> {$rutaCompleta}");
 
             return "/{$directorioLocal}/{$nombreLocal}";
         } catch (\Exception $e) {
