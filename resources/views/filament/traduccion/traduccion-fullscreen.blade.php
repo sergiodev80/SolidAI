@@ -12,14 +12,15 @@
     main, [role="main"] {
         margin: 0 !important;
         padding: 0 !important;
-        height: 100vh;
+        height: 100%;
         overflow: hidden;
     }
 
     .traduccion-wrapper {
         display: flex;
         flex-direction: column;
-        height: 100vh;
+        height: 100%;
+        width: 100%;
         background: white;
         margin: 0;
         padding: 0;
