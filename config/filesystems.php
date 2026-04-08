@@ -47,6 +47,27 @@ return [
             'report' => false,
         ],
 
+        'presupuestos_ftp' => [
+            'driver'   => 'ftp',
+            'host'     => env('PRESUP_FTP_HOST'),
+            'username' => env('PRESUP_FTP_USER'),
+            'password' => env('PRESUP_FTP_PASS'),
+            'port'     => env('PRESUP_FTP_PORT', 21),
+            'root'     => env('PRESUP_FTP_ROOT', '/'),
+            'passive'  => true,
+            'ssl'      => env('PRESUP_FTP_SSL', false),
+            'timeout'  => 30,
+            'throw'    => false,
+        ],
+
+        'presupuestos_local' => [
+            'driver'     => 'local',
+            'root'       => storage_path('app/presupuestos'),
+            'url'        => rtrim(env('APP_URL', 'http://localhost'), '/').'/storage/presupuestos',
+            'visibility' => 'private',
+            'throw'      => false,
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),

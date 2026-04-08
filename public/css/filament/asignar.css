@@ -1,0 +1,128 @@
+/* ── Asignar plugin styles ── */
+
+.asignar-card {
+    background: #ffffff;
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,.10);
+    border: 1px solid #e5e7eb;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.dark .asignar-card {
+    background: #1f2937;
+    border-color: #374151;
+}
+
+.asignar-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+}
+
+.asignar-card-title {
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.dark .asignar-card-title {
+    color: #f9fafb;
+}
+
+.asignar-cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.asignar-col-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #9ca3af;
+    margin-bottom: 0.5rem;
+}
+
+.dark .asignar-col-label {
+    color: #6b7280;
+}
+
+.asignar-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #f9fafb;
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 0.25rem;
+}
+
+.dark .asignar-row {
+    background: #374151;
+}
+
+.asignar-row-info {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    font-size: 0.875rem;
+    color: #374151;
+}
+
+.dark .asignar-row-info {
+    color: #e5e7eb;
+}
+
+.asignar-row-pages {
+    color: #9ca3af;
+}
+
+.asignar-empty {
+    font-size: 0.875rem;
+    color: #9ca3af;
+    font-style: italic;
+}
+
+.asignar-remove-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.875rem;
+    margin-left: 0.5rem;
+    line-height: 1;
+    color: #f87171;
+}
+
+.asignar-remove-btn:hover {
+    color: #dc2626;
+}
+
+/* Border colors */
+.asignar-border-blue  { border-left: 4px solid #3b82f6; }
+.asignar-border-red   { border-left: 4px solid #ef4444; }
+.asignar-border-amber { border-left: 4px solid #f59e0b; }
+
+/* Estado badges */
+.estado-asignado      { background: #fef9c3; color: #854d0e; }
+.estado-traduccion    { background: #dcfce7; color: #166534; }
+.estado-revision      { background: #dbeafe; color: #1e40af; }
+.estado-aceptado      { background: #f3e8ff; color: #6b21a8; }
+.estado-impreso       { background: #ffedd5; color: #9a3412; }
+.estado-entregado     { background: #f3f4f6; color: #374151; }
+
+.dark .estado-asignado      { background: #713f12; color: #fef08a; }
+.dark .estado-traduccion    { background: #14532d; color: #86efac; }
+.dark .estado-revision      { background: #1e3a5f; color: #93c5fd; }
+.dark .estado-aceptado      { background: #4a044e; color: #d8b4fe; }
+.dark .estado-impreso       { background: #431407; color: #fed7aa; }
+.dark .estado-entregado     { background: #1f2937; color: #d1d5db; }
+
+.estado-badge {
+    font-size: 0.75rem;
+    padding: 0.125rem 0.5rem;
+    border-radius: 9999px;
+    white-space: nowrap;
+}

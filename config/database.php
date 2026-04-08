@@ -64,6 +64,25 @@ return [
             ]) : [],
         ],
 
+        'erp' => [
+            'driver' => 'mysql',
+            'host' => env('ERP_DB_HOST', '127.0.0.1'),
+            'port' => env('ERP_DB_PORT', '3306'),
+            'database' => env('ERP_DB_DATABASE', ''),
+            'username' => env('ERP_DB_USERNAME', ''),
+            'password' => env('ERP_DB_PASSWORD', ''),
+            'unix_socket' => '',
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'strict' => false,
+            'engine' => null,
+            'options' => extension_loaded('pdo_mysql') ? array_filter([
+                (PHP_VERSION_ID >= 80500 ? Mysql::ATTR_SSL_CA : PDO::MYSQL_ATTR_SSL_CA) => env('ERP_MYSQL_ATTR_SSL_CA'),
+            ]) : [],
+        ],
+
         'mariadb' => [
             'driver' => 'mariadb',
             'url' => env('DB_URL'),
