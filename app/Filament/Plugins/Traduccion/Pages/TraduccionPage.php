@@ -16,6 +16,13 @@ class TraduccionPage extends Page
     public ?int $idAsignacion = null;
     public ?int $latestVersion = null;
 
+    protected function getViewData(): array
+    {
+        return array_merge(parent::getViewData(), [
+            'documento' => $this->asignacion->adjunto,
+        ]);
+    }
+
     public static function getNavigationIcon(): string|\BackedEnum|null
     {
         return 'heroicon-o-document-text';
