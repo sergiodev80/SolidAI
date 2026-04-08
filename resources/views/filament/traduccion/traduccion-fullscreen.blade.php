@@ -1,9 +1,10 @@
 <x-filament-panels::page>
 
 <style>
-    /* Ocultar sidebar, titulo de Filament y encabezado */
+    /* Ocultar sidebar, titulo de Filament, encabezado y topbar */
     [data-sidebar], .fi-sidebar, aside[data-sidebar],
-    .fi-page-header, [class*="PageHeader"], h1.fi-page-title, .fi-header {
+    .fi-page-header, [class*="PageHeader"], h1.fi-page-title, .fi-header,
+    .fi-topbar {
         display: none !important;
     }
 
