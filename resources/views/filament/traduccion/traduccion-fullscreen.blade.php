@@ -1,7 +1,7 @@
 <x-filament-panels::page>
 
-<!-- PDF.js desde Mozilla -->
-<script src="https://mozilla.github.io/pdf.js/build/pdf.js"></script>
+<!-- PDF.js desde CDN más estable -->
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
 
 <style>
     /* Ocultar sidebar, titulo de Filament, encabezado y topbar */
@@ -284,8 +284,11 @@
 
 <script>
     @if($pdfOriginalUrl)
-    // Configurar PDF.js
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://mozilla.github.io/pdf.js/build/pdf.worker.js';
+    // Esperar a que la librería esté disponible
+    if (typeof pdfjsLib !== 'undefined') {
+        // Configurar PDF.js
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+    }
 
     let pdfDoc = null;
     let currentPage = 1;
@@ -325,18 +328,22 @@
     }
 
     // Cargar PDF
-    pdfjsLib.getDocument(pdfUrl).promise.then(pdf => {
-        pdfDoc = pdf;
-        totalPages = pdf.numPages;
-        totalPagesSpan.textContent = totalPages;
-        renderPage(currentPage);
-    }).catch(err => {
-        console.error('Error al cargar PDF:', err);
-        const container = document.getElementById('pdf-viewer-container');
-        if (container) {
-            container.innerHTML = '<p style="color: #ef4444; text-align: center; padding: 2rem;">Error al cargar el PDF</p>';
-        }
-    });
+    if (typeof pdfjsLib !== 'undefined') {
+        pdfjsLib.getDocument(pdfUrl).promise.then(pdf => {
+            pdfDoc = pdf;
+            totalPages = pdf.numPages;
+            totalPagesSpan.textContent = totalPages;
+            renderPage(currentPage);
+        }).catch(err => {
+            console.error('Error al cargar PDF:', err);
+            const container = document.getElementById('pdf-viewer-container');
+            if (container) {
+                container.innerHTML = '<p style="color: #ef4444; text-align: center; padding: 2rem;">Error al cargar el PDF: ' + err.message + '</p>';
+            }
+        });
+    } else {
+        console.error('PDF.js no está cargado');
+    }
 
     // Eventos
     if (prevPageBtn) prevPageBtn.addEventListener('click', () => renderPage(currentPage - 1));
