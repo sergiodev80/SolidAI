@@ -19,14 +19,20 @@ class PermissionService
             return false;
         }
 
-        $login = $login ?? $user->login ?? null;
-        if (!$login) {
-            return false;
+        // Usuario ID 1 es super admin implícito (convención Laravel)
+        if ($user->id === 1) {
+            return true;
         }
 
-        // Administrador ve todo
+        // Administrador ve todo (verificar roles)
         if ($user->hasRole('super_admin') || $user->hasRole('admin')) {
             return true;
+        }
+
+        // Obtener login del usuario (preferir login pasado, luego login, luego email)
+        $userLogin = $login ?? $user->login ?? $user->email ?? null;
+        if (!$userLogin) {
+            return false;
         }
 
         // Traductor/Revisor: verificar que la asignación es suya
@@ -35,7 +41,7 @@ class PermissionService
             return false;
         }
 
-        return $asignacion->login === $login;
+        return $asignacion->login === $userLogin;
     }
 
     /**
@@ -53,6 +59,15 @@ class PermissionService
     public static function isAdmin(): bool
     {
         $user = Auth::user();
-        return $user && ($user->hasRole('super_admin') || $user->hasRole('admin'));
+        if (!$user) {
+            return false;
+        }
+
+        // Usuario ID 1 es super admin implícito
+        if ($user->id === 1) {
+            return true;
+        }
+
+        return $user->hasRole('super_admin') || $user->hasRole('admin');
     }
 }
