@@ -94,9 +94,10 @@ class TraduccionController extends Controller
             $asignacion->update(['estado' => 'En Traducción']);
         }
 
-        return view('filament.traduccion.traduccion-page', [
+        return view('traduccion.page', [
             'asignacion' => $asignacion,
             'documento' => $documento,
+            'idAsignacion' => $id_asignacion,
             'latestVersion' => $latestVersion,
             'onlyofficeUrl' => config('traduccion.onlyoffice.url'),
         ]);
