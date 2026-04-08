@@ -12,14 +12,19 @@
     main, [role="main"] {
         margin: 0 !important;
         padding: 0 !important;
-        height: 100%;
+        height: 100vh;
         overflow: hidden;
+    }
+
+    .fi-page-header-main-ctn {
+        margin: 0 !important;
+        padding: 0 !important;
     }
 
     .traduccion-wrapper {
         display: flex;
         flex-direction: column;
-        height: 100%;
+        height: 100vh;
         width: 100%;
         background: white;
         margin: 0;
