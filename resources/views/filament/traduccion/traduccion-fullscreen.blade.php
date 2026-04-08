@@ -1,7 +1,7 @@
 <x-filament-panels::page>
 
-<!-- PDF.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<!-- PDF.js desde Mozilla -->
+<script src="https://mozilla.github.io/pdf.js/build/pdf.js"></script>
 
 <style>
     /* Ocultar sidebar, titulo de Filament, encabezado y topbar */
@@ -285,7 +285,7 @@
 <script>
     @if($pdfOriginalUrl)
     // Configurar PDF.js
-    pdfjsWorker.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://mozilla.github.io/pdf.js/build/pdf.worker.js';
 
     let pdfDoc = null;
     let currentPage = 1;
@@ -294,27 +294,15 @@
 
     const pdfUrl = '{{ $pdfOriginalUrl }}';
     const canvas = document.getElementById('pdf-canvas');
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas ? canvas.getContext('2d') : null;
     const currentPageSpan = document.getElementById('current-page');
     const totalPagesSpan = document.getElementById('total-pages');
     const prevPageBtn = document.getElementById('prev-page');
     const nextPageBtn = document.getElementById('next-page');
     const zoomSlider = document.getElementById('zoom-slider');
 
-    // Cargar PDF
-    pdfjsWorker.getDocument(pdfUrl).promise.then(pdf => {
-        pdfDoc = pdf;
-        totalPages = pdf.numPages;
-        totalPagesSpan.textContent = totalPages;
-        renderPage(currentPage);
-    }).catch(err => {
-        console.error('Error al cargar PDF:', err);
-        document.getElementById('pdf-viewer-container').innerHTML = '<p style="color: #ef4444; text-align: center; padding: 2rem;">Error al cargar el PDF</p>';
-    });
-
-    // Renderizar página
     function renderPage(pageNum) {
-        if (pdfDoc === null) return;
+        if (!pdfDoc || !ctx) return;
 
         if (pageNum < 1) pageNum = 1;
         if (pageNum > totalPages) pageNum = totalPages;
@@ -329,24 +317,31 @@
             canvas.width = viewport.width;
             canvas.height = viewport.height;
 
-            const renderContext = {
+            page.render({
                 canvasContext: ctx,
                 viewport: viewport
-            };
-
-            page.render(renderContext).promise.then(() => {
-                console.log(`Página ${pageNum} renderizada`);
-            }).catch(err => {
-                console.error('Error renderizando página:', err);
-            });
-        });
+            }).promise.catch(err => console.error('Error renderizando:', err));
+        }).catch(err => console.error('Error obteniendo página:', err));
     }
 
-    // Eventos
-    prevPageBtn.addEventListener('click', () => renderPage(currentPage - 1));
-    nextPageBtn.addEventListener('click', () => renderPage(currentPage + 1));
+    // Cargar PDF
+    pdfjsLib.getDocument(pdfUrl).promise.then(pdf => {
+        pdfDoc = pdf;
+        totalPages = pdf.numPages;
+        totalPagesSpan.textContent = totalPages;
+        renderPage(currentPage);
+    }).catch(err => {
+        console.error('Error al cargar PDF:', err);
+        const container = document.getElementById('pdf-viewer-container');
+        if (container) {
+            container.innerHTML = '<p style="color: #ef4444; text-align: center; padding: 2rem;">Error al cargar el PDF</p>';
+        }
+    });
 
-    zoomSlider.addEventListener('input', (e) => {
+    // Eventos
+    if (prevPageBtn) prevPageBtn.addEventListener('click', () => renderPage(currentPage - 1));
+    if (nextPageBtn) nextPageBtn.addEventListener('click', () => renderPage(currentPage + 1));
+    if (zoomSlider) zoomSlider.addEventListener('input', (e) => {
         zoom = parseInt(e.target.value);
         renderPage(currentPage);
     });
