@@ -40,7 +40,12 @@ class TraduccionPage extends Page
 
     public static function shouldRegisterNavigation(): bool
     {
-        return false; // No mostrar en menú - acceder via ruta dinámica
+        return false; // No mostrar en menú
+    }
+
+    public static function shouldRegisterRoute(): bool
+    {
+        return false; // No registrar ruta de Filament - usar ruta HTTP directa
     }
 
     public function mount(int $id_asignacion): void
