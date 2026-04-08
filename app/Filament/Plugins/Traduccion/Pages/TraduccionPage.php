@@ -6,6 +6,7 @@ use App\Models\PresupAdjAsignacion;
 use App\Services\PermissionService;
 use App\Services\PdfOriginalService;
 use App\Services\TraduccionAiService;
+use App\Services\OnlyOfficeService;
 use Filament\Pages\Page;
 use Filament\Support\Enums\Width;
 use Illuminate\Support\Facades\Route;
@@ -23,6 +24,7 @@ class TraduccionPage extends Page
     public ?string $documentoV1Url = null;
     public bool $documentoTraducido = false;
     public string $targetLanguage = 'es';
+    public ?array $onlyofficeConfig = null;
 
     protected function getViewData(): array
     {
@@ -33,6 +35,7 @@ class TraduccionPage extends Page
             'documentoV1Url' => $this->documentoV1Url,
             'documentoTraducido' => $this->documentoTraducido,
             'targetLanguage' => $this->targetLanguage,
+            'onlyofficeConfig' => $this->onlyofficeConfig ? json_encode($this->onlyofficeConfig) : null,
         ]);
     }
 
@@ -90,6 +93,18 @@ class TraduccionPage extends Page
             if (is_dir($dirV1) && file_exists("{$dirV1}/documento_V1.docx")) {
                 $this->documentoV1Url = "/archivos/traducciones/{$presupuesto->id_pres}/{$this->asignacion->id}/documento_V1.docx";
                 $this->documentoTraducido = true;
+
+                // Crear configuración de OnlyOffice
+                $onlyofficeService = app(OnlyOfficeService::class);
+                if ($onlyofficeService->isConfigured()) {
+                    $this->onlyofficeConfig = $onlyofficeService->createEditorConfig(
+                        $this->documentoV1Url,
+                        "Traducción - {$this->asignacion->adjunto->nombre_archivo}",
+                        auth()->id(),
+                        auth()->user()->name ?? 'Usuario',
+                        'edit'
+                    );
+                }
             }
         }
 

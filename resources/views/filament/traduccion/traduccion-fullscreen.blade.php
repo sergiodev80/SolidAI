@@ -429,25 +429,8 @@
     @else
     // Inicializar OnlyOffice si el documento ya está traducido
     document.addEventListener('DOMContentLoaded', function() {
-        const config = {
-            "document": {
-                "fileType": "docx",
-                "key": "{{ md5($documentoV1Url . time()) }}",
-                "title": "Documento Traducción",
-                "url": "{{ $documentoV1Url }}"
-            },
-            "documentType": "text",
-            "editorConfig": {
-                "callbackUrl": "/api/onlyoffice/callback",
-                "mode": "edit",
-                "user": {
-                    "id": "{{ auth()->id() }}",
-                    "name": "{{ auth()->user()->name ?? 'Usuario' }}"
-                }
-            },
-            "height": "100%",
-            "width": "100%"
-        };
+        @if($onlyofficeConfig)
+        const config = {!! $onlyofficeConfig !!};
 
         if (typeof DocsAPI !== 'undefined') {
             new DocsAPI.DocEditor('onlyoffice-container', config);
@@ -455,6 +438,9 @@
             console.error('OnlyOffice API no cargó correctamente');
             document.getElementById('onlyoffice-container').innerHTML = '<p style="color: #ef4444;">Error al cargar OnlyOffice</p>';
         }
+        @else
+        document.getElementById('onlyoffice-container').innerHTML = '<p style="color: #ef4444;">OnlyOffice no está configurado</p>';
+        @endif
     });
     @endif
 </script>
