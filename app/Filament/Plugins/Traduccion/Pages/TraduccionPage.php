@@ -64,7 +64,7 @@ class TraduccionPage extends Page
         $this->idAsignacion = $id_asignacion;
 
         // Obtener todos los traductores asignados al mismo documento
-        $this->traductoresAsignados = PresupAdjAsignacion::where('adjunto_id', $this->asignacion->adjunto_id)
+        $this->traductoresAsignados = PresupAdjAsignacion::where('id_adjun', $this->asignacion->id_adjun)
             ->distinct('login')
             ->get(['id', 'login'])
             ->pluck('login', 'id');
