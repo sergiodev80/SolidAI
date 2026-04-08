@@ -4,6 +4,7 @@ namespace App\Filament\Plugins\Traduccion\Pages;
 
 use App\Models\PresupAdjAsignacion;
 use App\Services\PermissionService;
+use App\Services\PdfOriginalService;
 use Filament\Pages\Page;
 use Filament\Support\Enums\Width;
 use Illuminate\Support\Facades\Route;
@@ -17,12 +18,14 @@ class TraduccionPage extends Page
     public ?int $idAsignacion = null;
     public ?int $latestVersion = null;
     public $traductoresAsignados = [];
+    public ?string $pdfOriginalUrl = null;
 
     protected function getViewData(): array
     {
         return array_merge(parent::getViewData(), [
             'documento' => $this->asignacion->adjunto,
             'traductoresAsignados' => $this->traductoresAsignados,
+            'pdfOriginalUrl' => $this->pdfOriginalUrl,
         ]);
     }
 
@@ -68,6 +71,10 @@ class TraduccionPage extends Page
             ->distinct('login')
             ->get(['id', 'login'])
             ->pluck('login', 'id');
+
+        // Obtener o descargar PDF original
+        $pdfService = app(PdfOriginalService::class);
+        $this->pdfOriginalUrl = $pdfService->obtenerPdfOriginal($this->asignacion);
 
         // Obtener última versión (será obtenida en la vista)
     }

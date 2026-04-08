@@ -1,5 +1,9 @@
 <x-filament-panels::page>
 
+<!-- PDF.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>pdfjsWorker = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
+
 <style>
     /* Ocultar sidebar, titulo de Filament, encabezado y topbar */
     [data-sidebar], .fi-sidebar, aside[data-sidebar],
@@ -196,13 +200,22 @@
             <div class="traduccion-panel-header">
                 <h2>ORIGINAL ({{ $asignacion->adjunto->nombre_archivo ?? '' }})</h2>
             </div>
-            <div class="traduccion-panel-content">
-                <div style="margin-bottom: 1rem;">
-                    📄 <strong>PDF Viewer (PDF.js)</strong>
-                </div>
-                <p style="margin-top: 1rem;">
-                    El visor PDF se cargará aquí. Integración con PDF.js o similar.
-                </p>
+            <div class="traduccion-panel-content" id="pdf-viewer-container">
+                @if($pdfOriginalUrl)
+                    <div id="pdf-controls" style="margin-bottom: 1rem; display: flex; gap: 0.5rem; align-items: center;">
+                        <button id="prev-page" style="padding: 0.5rem 1rem; border: 1px solid #e5e7eb; background: white; cursor: pointer; border-radius: 0.375rem;">← Anterior</button>
+                        <span id="page-info" style="font-size: 0.875rem; color: #6b7280; flex: 1; text-align: center;">Página <span id="current-page">1</span> de <span id="total-pages">0</span></span>
+                        <button id="next-page" style="padding: 0.5rem 1rem; border: 1px solid #e5e7eb; background: white; cursor: pointer; border-radius: 0.375rem;">Siguiente →</button>
+                        <input type="range" id="zoom-slider" min="50" max="200" value="100" style="width: 100px; cursor: pointer;">
+                    </div>
+                    <div id="pdf-canvas-container" style="flex: 1; overflow: auto; border: 1px solid #e5e7eb; background: #f9fafb;">
+                        <canvas id="pdf-canvas" style="display: block; margin: 0 auto;"></canvas>
+                    </div>
+                @else
+                    <p style="color: #ef4444; text-align: center; padding: 2rem;">
+                        No se pudo cargar el documento PDF
+                    </p>
+                @endif
             </div>
         </div>
 
@@ -269,5 +282,83 @@
     </div>
 
 </div>
+
+<script>
+    @if($pdfOriginalUrl)
+    // Configurar PDF.js
+    const pdfjsLib = window['pdfjs-dist/build/pdf'];
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    let pdfDoc = null;
+    let currentPage = 1;
+    let totalPages = 0;
+    let zoom = 100;
+
+    const pdfUrl = '{{ $pdfOriginalUrl }}';
+    const canvas = document.getElementById('pdf-canvas');
+    const ctx = canvas.getContext('2d');
+    const currentPageSpan = document.getElementById('current-page');
+    const totalPagesSpan = document.getElementById('total-pages');
+    const prevPageBtn = document.getElementById('prev-page');
+    const nextPageBtn = document.getElementById('next-page');
+    const zoomSlider = document.getElementById('zoom-slider');
+
+    // Cargar PDF
+    pdfjsLib.getDocument(pdfUrl).promise.then(pdf => {
+        pdfDoc = pdf;
+        totalPages = pdf.numPages;
+        totalPagesSpan.textContent = totalPages;
+        renderPage(currentPage);
+    }).catch(err => {
+        console.error('Error al cargar PDF:', err);
+        document.getElementById('pdf-viewer-container').innerHTML = '<p style="color: #ef4444; text-align: center; padding: 2rem;">Error al cargar el PDF</p>';
+    });
+
+    // Renderizar página
+    function renderPage(pageNum) {
+        if (pdfDoc === null) return;
+
+        if (pageNum < 1) pageNum = 1;
+        if (pageNum > totalPages) pageNum = totalPages;
+
+        currentPage = pageNum;
+        currentPageSpan.textContent = currentPage;
+
+        pdfDoc.getPage(pageNum).then(page => {
+            const scale = zoom / 100;
+            const viewport = page.getViewport({ scale });
+
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+
+            const renderContext = {
+                canvasContext: ctx,
+                viewport: viewport
+            };
+
+            page.render(renderContext).promise.then(() => {
+                console.log(`Página ${pageNum} renderizada`);
+            }).catch(err => {
+                console.error('Error renderizando página:', err);
+            });
+        });
+    }
+
+    // Eventos
+    prevPageBtn.addEventListener('click', () => renderPage(currentPage - 1));
+    nextPageBtn.addEventListener('click', () => renderPage(currentPage + 1));
+
+    zoomSlider.addEventListener('input', (e) => {
+        zoom = parseInt(e.target.value);
+        renderPage(currentPage);
+    });
+
+    // Navegación con teclado
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft') renderPage(currentPage - 1);
+        if (e.key === 'ArrowRight') renderPage(currentPage + 1);
+    });
+    @endif
+</script>
 
 </x-filament-panels::page>
