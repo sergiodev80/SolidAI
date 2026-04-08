@@ -22,4 +22,8 @@ Route::middleware(['web', 'auth'])->group(function () {
         ->where('filename', '.*')
         ->name('ftp-pdf.blob');
 
+    // Traducción con IA
+    Route::post('/admin/traduccion/traducir-ai/{id_asignacion}', [\App\Http\Controllers\TraduccionAiController::class, 'traducir'])
+        ->name('traduccion.traducir-ai');
+
 });
