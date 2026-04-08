@@ -19,8 +19,9 @@ class Traduccion implements Plugin
 
     public function register(Panel $panel): void
     {
-        // La página de traducción NO se registra aquí
-        // Se accede vía ruta HTTP pura: /traduccion/{id_asignacion}
+        $panel->pages([
+            Pages\TraduccionPage::class,
+        ]);
     }
 
     public function boot(Panel $panel): void
