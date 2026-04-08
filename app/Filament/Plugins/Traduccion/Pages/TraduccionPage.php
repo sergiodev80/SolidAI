@@ -5,6 +5,7 @@ namespace App\Filament\Plugins\Traduccion\Pages;
 use App\Models\PresupAdjAsignacion;
 use App\Services\PermissionService;
 use Filament\Pages\Page;
+use Filament\Support\Enums\MaxWidth;
 use Illuminate\Support\Facades\Route;
 
 class TraduccionPage extends Page
@@ -43,9 +44,9 @@ class TraduccionPage extends Page
         return false; // No mostrar en menú
     }
 
-    public static function shouldRegisterRoute(): bool
+    public function getMaxContentWidth(): MaxWidth | string | null
     {
-        return false; // No registrar ruta de Filament - usar ruta HTTP directa
+        return MaxWidth::Full; // Usar ancho completo
     }
 
     public function mount(int $id_asignacion): void
