@@ -1,96 +1,86 @@
 <x-filament-panels::page>
 
 <style>
-    /* Ocultar sidebar de Filament */
-    [data-sidebar],
-    .fi-sidebar,
-    aside[data-sidebar] {
+    /* Ocultar sidebar y titulo de Filament */
+    [data-sidebar], .fi-sidebar, aside[data-sidebar],
+    .fi-page-header, [class*="PageHeader"], h1.fi-page-title, .fi-header {
         display: none !important;
     }
 
     /* Expandir contenido a fullscreen */
-    main,
-    [role="main"] {
+    main, [role="main"] {
         margin-left: 0 !important;
-    }
-
-    /* Ocultar título de página Filament */
-    .fi-page-header,
-    [class*="PageHeader"],
-    h1.fi-page-title,
-    .fi-header {
-        display: none !important;
     }
 </style>
 
-<div class="traduccion-wrapper" style="display: flex; flex-direction: column; height: calc(100vh - 80px); background: white; margin: -1.5rem -1.5rem 0 -1.5rem; padding: 0;">
+<div class="flex flex-col h-screen bg-white dark:bg-gray-900 -m-6">
 
     {{-- Header --}}
-    <div style="padding: 1.5rem; border-bottom: 1px solid #e5e7eb; background: #f9fafb; flex-shrink: 0;">
-        <h1 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem; margin: 0 0 0.5rem 0;">
+    <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex-shrink-0">
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">
             Traducción — {{ $asignacion->adjunto->nombre_archivo ?? '' }}
         </h1>
-        <div style="font-size: 0.875rem; color: #6b7280;">
-            <span style="margin-right: 1rem;">
-                Páginas asignadas: <strong>{{ $asignacion->pag_inicio }} - {{ $asignacion->pag_fin }}</strong>
+        <div class="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+            <span>
+                Páginas asignadas: <strong class="text-gray-900 dark:text-white">{{ $asignacion->pag_inicio }} - {{ $asignacion->pag_fin }}</strong>
             </span>
-            <span style="display: inline-block; padding: 0.25rem 0.75rem; background: #2563eb; color: white; border-radius: 0.375rem; font-size: 0.75rem; font-weight: 600;">
+            <span class="inline-block px-3 py-1 bg-blue-500 text-white rounded text-xs font-semibold">
                 {{ $asignacion->estado }}
             </span>
         </div>
     </div>
 
     {{-- 3 Paneles --}}
-    <div style="display: flex; flex: 1; overflow: hidden;">
+    <div class="flex flex-1 overflow-hidden">
 
         {{-- Panel Izquierdo: PDF Original --}}
-        <div style="flex: 0 0 35%; display: flex; flex-direction: column; overflow: hidden; border-right: 1px solid #e5e7eb;">
-            <div style="padding: 1rem; border-bottom: 1px solid #e5e7eb; background: #f9fafb; flex-shrink: 0;">
-                <h2 style="font-size: 0.875rem; font-weight: 600; color: #374151; margin: 0;">
+        <div class="flex-[0_0_35%] flex flex-col overflow-hidden border-r border-gray-200 dark:border-gray-700">
+            <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex-shrink-0">
+                <h2 class="text-sm font-semibold text-gray-900 dark:text-white">
                     ORIGINAL ({{ $asignacion->adjunto->nombre_archivo ?? '' }})
                 </h2>
             </div>
-            <div style="flex: 1; overflow-y: auto; padding: 1rem;">
-                <div style="color: #9ca3af; font-size: 0.875rem;">
+            <div class="flex-1 overflow-y-auto p-4">
+                <div class="text-gray-500 dark:text-gray-400 text-sm">
                     📄 <strong>PDF Viewer (PDF.js)</strong>
                 </div>
-                <p style="color: #9ca3af; font-size: 0.875rem; margin-top: 1rem;">
+                <p class="text-gray-500 dark:text-gray-400 text-sm mt-4">
                     El visor PDF se cargará aquí. Integración con PDF.js o similar.
                 </p>
             </div>
         </div>
 
         {{-- Panel Central: Editor OnlyOffice --}}
-        <div style="flex: 0 0 50%; display: flex; flex-direction: column; overflow: hidden; border-right: 1px solid #e5e7eb;">
-            <div style="padding: 1rem; border-bottom: 1px solid #e5e7eb; background: #f9fafb; flex-shrink: 0;">
-                <h2 style="font-size: 0.875rem; font-weight: 600; color: #374151; margin: 0;">
+        <div class="flex-[0_0_50%] flex flex-col overflow-hidden border-r border-gray-200 dark:border-gray-700">
+            <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex-shrink-0">
+                <h2 class="text-sm font-semibold text-gray-900 dark:text-white">
                     TRADUCCIÓN (V{{ $latestVersion ?? 1 }})
                 </h2>
             </div>
-            <div style="flex: 1; overflow-y: auto; padding: 1rem;">
-                <div style="color: #9ca3af; font-size: 0.875rem;">
+            <div class="flex-1 overflow-y-auto p-4">
+                <div class="text-gray-500 dark:text-gray-400 text-sm">
                     ✏️ <strong>Editor OnlyOffice</strong>
                 </div>
-                <p style="color: #9ca3af; font-size: 0.875rem; margin-top: 1rem;">
+                <p class="text-gray-500 dark:text-gray-400 text-sm mt-4">
                     El documento editable se cargará en OnlyOffice con JWT.
                 </p>
             </div>
         </div>
 
         {{-- Panel Derecho: Cambios --}}
-        <div style="flex: 0 0 15%; display: flex; flex-direction: column; overflow: hidden; background: #fafafa;">
-            <div style="padding: 1rem; border-bottom: 1px solid #e5e7eb; background: #f9fafb; flex-shrink: 0;">
-                <h2 style="font-size: 0.875rem; font-weight: 600; color: #374151; margin: 0;">
+        <div class="flex-[0_0_15%] flex flex-col overflow-hidden bg-gray-50 dark:bg-gray-800/50">
+            <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex-shrink-0">
+                <h2 class="text-sm font-semibold text-gray-900 dark:text-white">
                     CAMBIOS
                 </h2>
             </div>
-            <div style="flex: 1; overflow-y: auto; padding: 1rem;">
-                <div style="font-size: 0.75rem; color: #6b7280; margin-bottom: 1rem;">
-                    <strong style="color: #374151; display: block; font-size: 0.875rem;">Páginas</strong>
-                    <span style="margin-top: 0.5rem; display: block;">{{ $asignacion->pag_inicio }} - {{ $asignacion->pag_fin }}</span>
+            <div class="flex-1 overflow-y-auto p-4">
+                <div class="text-xs text-gray-600 dark:text-gray-400 mb-4">
+                    <strong class="block text-sm text-gray-900 dark:text-white">Páginas</strong>
+                    <span class="block mt-1">{{ $asignacion->pag_inicio }} - {{ $asignacion->pag_fin }}</span>
                 </div>
-                <hr style="border: none; border-top: 1px solid #d1d5db; margin: 1rem 0;">
-                <p style="color: #9ca3af; text-align: center; padding: 2rem 0; font-size: 0.75rem;">
+                <hr class="my-4 border-gray-200 dark:border-gray-700">
+                <p class="text-xs text-gray-500 dark:text-gray-400 text-center py-8">
                     Sin cambios aún
                 </p>
             </div>
@@ -99,22 +89,22 @@
     </div>
 
     {{-- Footer: Botones --}}
-    <div style="padding: 1rem 1.5rem; border-top: 1px solid #e5e7eb; background: #f9fafb; display: flex; gap: 0.5rem; flex-shrink: 0;">
+    <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex gap-2 flex-shrink-0">
         <button
             onclick="alert('Guardar documento')"
-            style="padding: 0.5rem 1rem; border: none; border-radius: 0.375rem; font-size: 0.875rem; font-weight: 500; cursor: pointer; background: #2563eb; color: white;"
+            class="px-4 py-2 bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white rounded text-sm font-medium transition"
         >
             Guardar
         </button>
         <button
             onclick="alert('Justificar cambios')"
-            style="padding: 0.5rem 1rem; border: none; border-radius: 0.375rem; font-size: 0.875rem; font-weight: 500; cursor: pointer; background: #0891b2; color: white;"
+            class="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 dark:bg-cyan-600 dark:hover:bg-cyan-700 text-white rounded text-sm font-medium transition"
         >
             Justificar Cambios
         </button>
         <button
             onclick="alert('Enviar para revisión')"
-            style="padding: 0.5rem 1rem; border: none; border-radius: 0.375rem; font-size: 0.875rem; font-weight: 500; cursor: pointer; background: #16a34a; color: white;"
+            class="px-4 py-2 bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700 text-white rounded text-sm font-medium transition"
         >
             Enviar para Revisión
         </button>
