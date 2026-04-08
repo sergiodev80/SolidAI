@@ -32,9 +32,7 @@
 
             {{-- Cabecera --}}
             <div class="asignar-card-header">
-                <span class="asignar-card-title">
-                    📄 {{ $documento->nombre_archivo }}
-                </span>
+                {{ ($this->previsualizarAction)(['filename' => $documento->nombre_archivo, 'nombre' => $documento->nombre_archivo]) }}
                 {{ ($this->asignarAction)(['id_adjun' => $documento->id_adjun, 'nombre' => $documento->nombre_archivo]) }}
             </div>
 

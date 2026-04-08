@@ -10,6 +10,7 @@ use Filament\Actions\Action;
 use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\View;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 
@@ -117,5 +118,42 @@ class AsignarPage extends Page
             ->success()
             ->title('Asignación eliminada')
             ->send();
+    }
+
+    public function previsualizarAction(): Action
+    {
+        return Action::make('previsualizarAction')
+            ->label('📄 Previsualizar')
+            ->color('info')
+            ->icon('heroicon-o-eye')
+            ->modalHeading(fn (array $arguments) => 'Previsualizar — ' . ($arguments['nombre'] ?? ''))
+            ->modalWidth('7xl')
+            ->form([
+                View::make('filament.asignar.preview-modal')
+                    ->viewData(fn (array $arguments) => [
+                        'filename' => $arguments['filename'] ?? '',
+                        'nombre' => $arguments['nombre'] ?? '',
+                        'onlyofficeUrl' => config('app.onlyoffice_url'),
+                        'onlyofficeJwtSecret' => config('app.onlyoffice_jwt_secret'),
+                    ]),
+            ])
+            ->modalSubmitAction(false)
+            ->modalCloseButton(true)
+            ->modalCancelActionLabel('Cerrar');
+    }
+
+    /**
+     * Determina el tipo de archivo según su extensión
+     */
+    private function getFileType(string $filename): string
+    {
+        $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+
+        return match ($ext) {
+            'pdf' => 'pdf',
+            'jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp' => 'image',
+            'doc', 'docx' => 'word',
+            default => 'unknown',
+        };
     }
 }

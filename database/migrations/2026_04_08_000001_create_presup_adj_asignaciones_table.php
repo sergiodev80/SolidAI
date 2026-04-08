@@ -10,19 +10,21 @@ return new class extends Migration
 
     public function up(): void
     {
-        Schema::connection('erp')->create('presup_adj_asignaciones', function (Blueprint $table) {
-            $table->bigIncrements('id');
-            $table->unsignedBigInteger('id_adjun');
-            $table->string('login');
-            $table->enum('rol', ['traductor', 'revisor']);
-            $table->unsignedInteger('pag_inicio');
-            $table->unsignedInteger('pag_fin');
-            $table->enum('estado', ['Asignado', 'En Traducción', 'En Revisión', 'Aceptado', 'Impreso', 'Entregado'])
-                  ->default('Asignado');
-            $table->timestamp('created_at')->useCurrent();
+        if (!Schema::connection('erp')->hasTable('presup_adj_asignaciones')) {
+            Schema::connection('erp')->create('presup_adj_asignaciones', function (Blueprint $table) {
+                $table->bigIncrements('id');
+                $table->unsignedBigInteger('id_adjun');
+                $table->string('login');
+                $table->enum('rol', ['traductor', 'revisor']);
+                $table->unsignedInteger('pag_inicio');
+                $table->unsignedInteger('pag_fin');
+                $table->enum('estado', ['Asignado', 'En Traducción', 'En Revisión', 'Aceptado', 'Impreso', 'Entregado'])
+                      ->default('Asignado');
+                $table->timestamp('created_at')->useCurrent();
 
-            $table->index(['id_adjun', 'rol']);
-        });
+                $table->index(['id_adjun', 'rol']);
+            });
+        }
     }
 
     public function down(): void
