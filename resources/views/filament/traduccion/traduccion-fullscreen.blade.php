@@ -13,6 +13,14 @@
     [role="main"] {
         margin-left: 0 !important;
     }
+
+    /* Ocultar título de página Filament */
+    .fi-page-header,
+    [class*="PageHeader"],
+    h1.fi-page-title,
+    .fi-header {
+        display: none !important;
+    }
 </style>
 
 <div class="traduccion-wrapper" style="display: flex; flex-direction: column; height: calc(100vh - 80px); background: white; margin: -1.5rem -1.5rem 0 -1.5rem; padding: 0;">
