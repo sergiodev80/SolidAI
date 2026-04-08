@@ -23,7 +23,7 @@ class TraduccionPage extends Page
 
     public function getView(): string
     {
-        return 'filament.traduccion.traduccion-page';
+        return 'traduccion.traduccion-page-clean';
     }
 
     public static function getNavigationGroup(): ?string
