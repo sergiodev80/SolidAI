@@ -156,6 +156,34 @@
         border-top: 1px solid #e5e7eb;
         margin: 1rem 0;
     }
+
+    .traductores-select {
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.375rem;
+        font-size: 0.875rem;
+        color: #374151;
+        background: white;
+        cursor: pointer;
+        margin-bottom: 1rem;
+    }
+
+    .traductores-select:hover {
+        border-color: #d1d5db;
+        background: #f9fafb;
+    }
+
+    .estado-label {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        background: #dbeafe;
+        color: #1e40af;
+        border-radius: 0.375rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-top: 0.5rem;
+    }
 </style>
 
 <div class="traduccion-wrapper">
@@ -199,10 +227,25 @@
                 <h2>CAMBIOS</h2>
             </div>
             <div class="traduccion-panel-content">
-                <div class="page-meta" style="margin-bottom: 1rem;">
+                {{-- Select de Traductores --}}
+                <select class="traductores-select" onchange="window.location.href='/admin/traduccion/' + this.value">
+                    @foreach($traductoresAsignados as $id => $login)
+                        <option value="{{ $id }}" @if($id === $asignacion->id) selected @endif>
+                            {{ $login }}
+                        </option>
+                    @endforeach
+                </select>
+
+                {{-- Información de Páginas y Estado --}}
+                <div class="page-meta">
                     <strong>Páginas</strong>
                     <span style="display: block; margin-top: 0.5rem;">{{ $asignacion->pag_inicio }} - {{ $asignacion->pag_fin }}</span>
                 </div>
+
+                <div style="margin-top: 0.5rem;">
+                    <span class="estado-label">{{ $asignacion->estado }}</span>
+                </div>
+
                 <hr class="cambios-divider">
                 <p style="text-align: center; padding: 2rem 0;">
                     Sin cambios aún

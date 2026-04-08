@@ -16,11 +16,13 @@ class TraduccionPage extends Page
     public ?PresupAdjAsignacion $asignacion = null;
     public ?int $idAsignacion = null;
     public ?int $latestVersion = null;
+    public $traductoresAsignados = [];
 
     protected function getViewData(): array
     {
         return array_merge(parent::getViewData(), [
             'documento' => $this->asignacion->adjunto,
+            'traductoresAsignados' => $this->traductoresAsignados,
         ]);
     }
 
@@ -60,6 +62,12 @@ class TraduccionPage extends Page
         // Obtener asignación
         $this->asignacion = PresupAdjAsignacion::findOrFail($id_asignacion);
         $this->idAsignacion = $id_asignacion;
+
+        // Obtener todos los traductores asignados al mismo documento
+        $this->traductoresAsignados = PresupAdjAsignacion::where('adjunto_id', $this->asignacion->adjunto_id)
+            ->distinct('login')
+            ->get(['id', 'login'])
+            ->pluck('login', 'id');
 
         // Obtener última versión (será obtenida en la vista)
     }
