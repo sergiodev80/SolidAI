@@ -80,16 +80,18 @@ class TraduccionPage extends Page
             ->get(['id', 'login'])
             ->pluck('login', 'id');
 
-        // Obtener o descargar PDF original
+        // Obtener o descargar PDF original (URL absoluta para PDF.js)
         $pdfService = app(PdfOriginalService::class);
-        $this->pdfOriginalUrl = $pdfService->obtenerPdfOriginal($this->asignacion);
+        $pdfRelativeUrl = $pdfService->obtenerPdfOriginal($this->asignacion);
+        $this->pdfOriginalUrl = $pdfRelativeUrl ? config('app.url') . ltrim($pdfRelativeUrl, '/') : null;
 
         // Obtener documento V1 si existe (traducción para esta asignación)
         $presupuesto = $this->asignacion->adjunto->presupuesto;
         if ($presupuesto) {
             $dirV1 = public_path("archivos/traducciones/{$presupuesto->id_pres}/{$this->asignacion->id}");
             if (is_dir($dirV1) && file_exists("{$dirV1}/documento_V1.docx")) {
-                $this->documentoV1Url = "/archivos/traducciones/{$presupuesto->id_pres}/{$this->asignacion->id}/documento_V1.docx";
+                // Usar URL absoluta para que OnlyOffice pueda descargar el documento
+                $this->documentoV1Url = config('app.url') . "archivos/traducciones/{$presupuesto->id_pres}/{$this->asignacion->id}/documento_V1.docx";
                 $this->documentoTraducido = true;
             }
         }
