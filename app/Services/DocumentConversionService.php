@@ -88,9 +88,10 @@ class DocumentConversionService
             // Verificar si pdf2docx está instalado
             $process = Process::timeout(5)->run(['which', 'pdf2docx']);
             if (!$process->successful()) {
-                // Intentar instalar
-                Log::info("Instalando pdf2docx...");
-                Process::timeout(120)->run(['pip', 'install', 'pdf2docx']);
+                // pdf2docx no está disponible, fallar rápido sin intentar instalar
+                // (la instalación en contexto web no funcionará de todas formas)
+                Log::info("pdf2docx no está instalado, intentando fallback a Azure Doc Intelligence");
+                return false;
             }
 
             // Convertir PDF a DOCX
