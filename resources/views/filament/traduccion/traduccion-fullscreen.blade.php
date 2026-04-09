@@ -331,19 +331,23 @@
                     ];
                 @endphp
 
-                @if($asignacion->id_idiom_original)
-                    <div class="page-meta" style="margin-bottom: 1rem;">
-                        <strong>Idioma Original</strong>
-                        <span style="display: block; margin-top: 0.5rem;">{{ $langNames[$asignacion->id_idiom_original] ?? 'Desconocido' }}</span>
-                    </div>
-                @endif
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 0.5rem; font-size: 0.875rem;">Idioma Original</label>
+                    <select id="select-idioma-original" class="traductores-select" style="margin-bottom: 0;">
+                        @foreach($langNames as $id => $name)
+                            <option value="{{ $id }}" @if($id === $asignacion->id_idiom_original) selected @endif>{{ $name }}</option>
+                        @endforeach
+                    </select>
+                </div>
 
-                @if($asignacion->id_idiom)
-                    <div class="page-meta">
-                        <strong>Idioma a Traducir</strong>
-                        <span style="display: block; margin-top: 0.5rem;">{{ $langNames[$asignacion->id_idiom] ?? 'Desconocido' }}</span>
-                    </div>
-                @endif
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 0.5rem; font-size: 0.875rem;">Idioma a Traducir</label>
+                    <select id="select-idioma-traducir" class="traductores-select" style="margin-bottom: 0;">
+                        @foreach($langNames as $id => $name)
+                            <option value="{{ $id }}" @if($id === $asignacion->id_idiom) selected @endif>{{ $name }}</option>
+                        @endforeach
+                    </select>
+                </div>
 
                 <hr class="cambios-divider">
                 <p style="text-align: center; padding: 2rem 0;">
@@ -486,12 +490,31 @@
         }
     });
     @else
+    // Mapeo de idioma ID a código Azure
+    const langCodeMap = {
+        1: 'es',  // Español
+        2: 'en',  // Inglés
+        3: 'pt',  // Portugués
+        4: 'fr',  // Francés
+        5: 'de',  // Alemán
+        6: 'it',  // Italiano
+        7: 'ja',  // Japonés
+        8: 'zh',  // Chino
+        9: 'ru',  // Ruso
+        10: 'ar', // Árabe
+    };
+
     // Botón para traducir con IA
     document.getElementById('btn-traducir-ia')?.addEventListener('click', async function() {
         const btn = this;
         btn.disabled = true;
         btn.style.opacity = '0.6';
         btn.textContent = '⏳ Traduciendo...';
+
+        // Obtener idioma seleccionado del selector
+        const idiomaSelectorElement = document.getElementById('select-idioma-traducir');
+        const idiomId = idiomaSelectorElement ? idiomaSelectorElement.value : '2';
+        const targetLanguageCode = langCodeMap[idiomId] || 'es';
 
         try {
             const response = await fetch('/admin/traduccion/traducir-ai/{{ $asignacion->id }}', {
@@ -501,7 +524,7 @@
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
                 },
                 body: JSON.stringify({
-                    targetLanguage: '{{ $targetLanguage ?? "es" }}'
+                    targetLanguage: targetLanguageCode
                 })
             });
 
@@ -523,6 +546,13 @@
             btn.style.opacity = '1';
             btn.textContent = '🤖 Traducir con IA';
         }
+    });
+
+    // Evento para actualizar el idioma cuando cambia el selector
+    document.getElementById('select-idioma-traducir')?.addEventListener('change', function() {
+        const idiomId = this.value;
+        const idiomName = this.options[this.selectedIndex].text;
+        console.log('Idioma a traducir cambiado a: ' + idiomName + ' (' + idiomId + ')');
     });
 
     // Inicializar OnlyOffice si el documento ya está traducido
