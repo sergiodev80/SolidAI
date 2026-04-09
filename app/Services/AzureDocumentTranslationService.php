@@ -9,12 +9,14 @@ class AzureDocumentTranslationService
 {
     private ?string $endpoint = null;
     private ?string $apiKey = null;
+    private ?string $region = null;
     private string $apiVersion = '2024-05-01';
 
     public function __construct()
     {
         $this->endpoint = config('services.azure_translator.endpoint');
         $this->apiKey = config('services.azure_translator.key');
+        $this->region = config('services.azure_translator.region');
     }
 
     /**
@@ -63,9 +65,19 @@ class AzureDocumentTranslationService
             // Construir URL con parámetros
             $url .= '&' . http_build_query($params);
 
+            Log::info("Enviando documento a Azure Translator", [
+                'url' => $url,
+                'archivo' => $fileName,
+                'tamaño' => strlen($fileContent),
+                'idioma_destino' => $targetLanguage,
+                'idioma_origen' => $sourceLanguage,
+                'region' => $this->region,
+            ]);
+
             // Hacer solicitud con multipart/form-data (requerido por Azure)
             $response = Http::withHeaders([
                 'Ocp-Apim-Subscription-Key' => $this->apiKey,
+                'Ocp-Apim-Subscription-Region' => $this->region,
             ])
             ->timeout(120)
             ->attach('Document', $fileContent, $fileName)
