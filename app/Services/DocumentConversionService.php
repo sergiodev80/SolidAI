@@ -156,9 +156,9 @@ class DocumentConversionService
                 'Content-Type' => 'application/octet-stream',
             ])
             ->timeout(120)
+            ->withBody($fileContent, 'application/octet-stream')
             ->post(
-                $this->docIntelligenceEndpoint . '/documentintelligence/documentModels/prebuilt-document:analyze?api-version=2024-02-29-preview',
-                $fileContent
+                $this->docIntelligenceEndpoint . '/documentintelligence/documentModels/prebuilt-document:analyze?api-version=2024-02-29-preview'
             );
 
             // Azure Doc Intelligence API es asincrónica y devuelve 202 Accepted
@@ -272,43 +272,63 @@ class DocumentConversionService
                 'Content-Type' => 'application/octet-stream',
             ])
             ->timeout(120)
+            ->withBody($imageContent, 'application/octet-stream')
             ->post(
-                $this->docIntelligenceEndpoint . '/documentintelligence/documentModels/prebuilt-document:analyze?api-version=2024-02-29-preview',
-                $imageContent
+                $this->docIntelligenceEndpoint . '/documentintelligence/documentModels/prebuilt-document:analyze?api-version=2024-02-29-preview'
             );
 
-            if (!$response->successful()) {
-                Log::warning("Azure Doc Intelligence failed, usando fallback", [
+            // Azure Doc Intelligence API es asincrónica y devuelve 202 Accepted
+            if ($response->status() !== 202) {
+                Log::warning("Azure Doc Intelligence submit failed for image, usando fallback", [
                     'status' => $response->status(),
                 ]);
                 return $this->convertImageToDocxFallback($inputPath, $outputPath);
             }
 
-            // Extraer texto - manejar UTF-8 malformado
-            $responseBody = $response->body();
-
-            // Limpiar caracteres UTF-8 malformados antes de parsear JSON
-            // 1. Normalizar a UTF-8 válido
-            $responseBody = mb_convert_encoding($responseBody, 'UTF-8', 'UTF-8');
-
-            // 2. Remover caracteres de control (excepto tab, newline, carriage return)
-            $responseBody = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]/u', '', $responseBody);
-
-            // 3. Remover BOM (Byte Order Mark) si existe
-            if (substr($responseBody, 0, 3) === "\xEF\xBB\xBF") {
-                $responseBody = substr($responseBody, 3);
-            }
-
-            $result = json_decode($responseBody, true);
-            if ($result === null && json_last_error() !== JSON_ERROR_NONE) {
-                Log::warning("JSON parse error from Azure in image conversion, using fallback", [
-                    'error' => json_last_error_msg(),
-                    'json_error_code' => json_last_error(),
-                ]);
+            // Obtener Operation-Location para polling
+            $operationLocation = $response->header('Operation-Location');
+            if (!$operationLocation) {
+                Log::warning("No Operation-Location header for image, usando fallback");
                 return $this->convertImageToDocxFallback($inputPath, $outputPath);
             }
 
-            $text = $this->extractTextFromDocIntelligenceResult($result);
+            // Polling para obtener resultados (igual que PDFs)
+            $maxAttempts = 60;
+            $attempts = 0;
+            $resultJson = null;
+
+            while ($attempts < $maxAttempts) {
+                sleep(1);
+                $attempts++;
+
+                $pollResponse = Http::withHeaders([
+                    'Ocp-Apim-Subscription-Key' => $this->docIntelligenceKey,
+                ])
+                ->timeout(30)
+                ->get($operationLocation);
+
+                if ($pollResponse->successful()) {
+                    $result = $pollResponse->json();
+
+                    if (isset($result['status']) && $result['status'] === 'succeeded') {
+                        $resultJson = $result;
+                        break;
+                    } elseif (isset($result['status']) && $result['status'] === 'failed') {
+                        Log::warning("Azure image analysis failed, usando fallback", [
+                            'error' => $result['error'] ?? 'Unknown error',
+                        ]);
+                        return $this->convertImageToDocxFallback($inputPath, $outputPath);
+                    }
+                }
+            }
+
+            if (!$resultJson) {
+                Log::warning("Azure image analysis timeout, using fallback");
+                return $this->convertImageToDocxFallback($inputPath, $outputPath);
+            }
+
+            // Extraer texto desde el resultado (ya está parseado vía polling)
+            $text = $this->extractTextFromDocIntelligenceResult($resultJson);
 
             // Crear DOCX con texto e imagen
             return $this->createDocxFromTextAndImage($text, $inputPath, $outputPath);
