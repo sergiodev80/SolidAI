@@ -612,25 +612,6 @@
         }
     });
 
-    // Abrir modal de idiomas
-    document.getElementById('btn-editar-idiomas')?.addEventListener('click', function() {
-        const modal = document.getElementById('modal-idiomas');
-        modal.style.display = 'flex';
-    });
-
-    // Cerrar modal
-    document.getElementById('btn-modal-cancelar')?.addEventListener('click', function() {
-        const modal = document.getElementById('modal-idiomas');
-        modal.style.display = 'none';
-    });
-
-    // Cerrar modal al clickear fuera
-    document.getElementById('modal-idiomas')?.addEventListener('click', function(e) {
-        if (e.target === this) {
-            this.style.display = 'none';
-        }
-    });
-
     // Eliminar archivo traducido (V2)
     document.getElementById('btn-eliminar-traduccion')?.addEventListener('click', async function() {
         if (!confirm('¿Estás seguro de que deseas eliminar el archivo traducido?')) {
@@ -668,6 +649,62 @@
             btn.disabled = false;
             btn.style.opacity = '1';
             btn.textContent = originalText;
+        }
+    });
+
+    // Inicializar OnlyOffice si el documento ya está traducido
+    document.addEventListener('DOMContentLoaded', function() {
+        const config = {
+            "document": {
+                "fileType": "docx",
+                "key": "{{ md5(trim($documentoV1Url ?? '') . time()) }}",
+                "title": "Documento Traducción",
+                "url": "{{ trim($documentoV1Url ?? '') }}"
+            },
+            "documentType": "word",
+            "editorConfig": {
+                "mode": "edit",
+                "user": {
+                    "id": "{{ auth()->id() }}",
+                    "name": "{{ auth()->user()->name ?? 'Usuario' }}"
+                }
+            },
+            "height": "100%",
+            "width": "100%"
+        };
+
+        console.log('Inicializando OnlyOffice con:', config);
+
+        if (typeof DocsAPI !== 'undefined') {
+            try {
+                new DocsAPI.DocEditor('onlyoffice-container', config);
+            } catch (error) {
+                console.error('Error inicializando OnlyOffice:', error);
+                document.getElementById('onlyoffice-container').innerHTML = '<p style="color: #ef4444;">Error al inicializar OnlyOffice: ' + error.message + '</p>';
+            }
+        } else {
+            console.error('OnlyOffice API (DocsAPI) no está disponible');
+            document.getElementById('onlyoffice-container').innerHTML = '<p style="color: #ef4444;">OnlyOffice API no cargó. Verifica la URL: {{ config("services.onlyoffice.url") }}</p>';
+        }
+    });
+    @endif
+
+    // Abrir modal de idiomas (siempre disponible)
+    document.getElementById('btn-editar-idiomas')?.addEventListener('click', function() {
+        const modal = document.getElementById('modal-idiomas');
+        modal.style.display = 'flex';
+    });
+
+    // Cerrar modal
+    document.getElementById('btn-modal-cancelar')?.addEventListener('click', function() {
+        const modal = document.getElementById('modal-idiomas');
+        modal.style.display = 'none';
+    });
+
+    // Cerrar modal al clickear fuera
+    document.getElementById('modal-idiomas')?.addEventListener('click', function(e) {
+        if (e.target === this) {
+            this.style.display = 'none';
         }
     });
 
@@ -723,43 +760,6 @@
             btn.textContent = originalText;
         }
     });
-
-    // Inicializar OnlyOffice si el documento ya está traducido
-    document.addEventListener('DOMContentLoaded', function() {
-        const config = {
-            "document": {
-                "fileType": "docx",
-                "key": "{{ md5(trim($documentoV1Url ?? '') . time()) }}",
-                "title": "Documento Traducción",
-                "url": "{{ trim($documentoV1Url ?? '') }}"
-            },
-            "documentType": "word",
-            "editorConfig": {
-                "mode": "edit",
-                "user": {
-                    "id": "{{ auth()->id() }}",
-                    "name": "{{ auth()->user()->name ?? 'Usuario' }}"
-                }
-            },
-            "height": "100%",
-            "width": "100%"
-        };
-
-        console.log('Inicializando OnlyOffice con:', config);
-
-        if (typeof DocsAPI !== 'undefined') {
-            try {
-                new DocsAPI.DocEditor('onlyoffice-container', config);
-            } catch (error) {
-                console.error('Error inicializando OnlyOffice:', error);
-                document.getElementById('onlyoffice-container').innerHTML = '<p style="color: #ef4444;">Error al inicializar OnlyOffice: ' + error.message + '</p>';
-            }
-        } else {
-            console.error('OnlyOffice API (DocsAPI) no está disponible');
-            document.getElementById('onlyoffice-container').innerHTML = '<p style="color: #ef4444;">OnlyOffice API no cargó. Verifica la URL: {{ config("services.onlyoffice.url") }}</p>';
-        }
-    });
-    @endif
 </script>
 
 </x-filament-panels::page>
