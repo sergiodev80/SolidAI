@@ -85,35 +85,54 @@ class DocumentConversionService
     private function convertPdfWithPdf2Docx(string $inputPath, string $outputPath): bool
     {
         try {
-            // Verificar si pdf2docx está instalado
-            $process = Process::timeout(5)->run(['which', 'pdf2docx']);
-            if (!$process->successful()) {
-                // pdf2docx no está disponible, fallar rápido sin intentar instalar
-                // (la instalación en contexto web no funcionará de todas formas)
-                Log::info("pdf2docx no está instalado, intentando fallback a Azure Doc Intelligence");
-                return false;
-            }
+            // Usar Python para ejecutar pdf2docx
+            $pythonScript = <<<'PYTHON'
+import sys
+from pdf2docx import Converter
 
-            // Convertir PDF a DOCX
-            $command = [
-                'pdf2docx',
-                'convert',
+input_pdf = sys.argv[1]
+output_docx = sys.argv[2]
+
+try:
+    converter = Converter(input_pdf)
+    converter.convert(output_docx)
+    converter.close()
+
+    import os
+    if os.path.exists(output_docx):
+        print("SUCCESS")
+    else:
+        print("ERROR: Output file not created")
+        sys.exit(1)
+except Exception as e:
+    print(f"ERROR: {e}")
+    sys.exit(1)
+PYTHON;
+
+            $tempScript = tempnam(sys_get_temp_dir(), 'pdf2docx_');
+            file_put_contents($tempScript, $pythonScript);
+
+            $process = Process::timeout(120)->run([
+                'python3',
+                $tempScript,
                 $inputPath,
                 $outputPath,
-            ];
+            ]);
 
-            $process = Process::timeout(60)->run($command);
+            @unlink($tempScript);
 
             if ($process->successful() && file_exists($outputPath)) {
                 Log::info("PDF convertido exitosamente con pdf2docx", [
                     'input' => $inputPath,
                     'output' => $outputPath,
+                    'size' => filesize($outputPath),
                 ]);
                 return true;
             }
 
             Log::warning("pdf2docx conversion failed", [
                 'input' => $inputPath,
+                'output' => $process->output(),
                 'error' => $process->errorOutput(),
             ]);
             return false;
