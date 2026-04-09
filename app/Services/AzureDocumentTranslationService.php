@@ -46,15 +46,10 @@ class AzureDocumentTranslationService
 
             // Obtener extensión
             $ext = pathinfo($filePath, PATHINFO_EXTENSION);
+            $fileName = basename($filePath);
 
             // URL del endpoint sincrónico
             $url = $this->endpoint . "/translator/document:translate?api-version={$this->apiVersion}";
-
-            // Headers
-            $headers = [
-                'Ocp-Apim-Subscription-Key' => $this->apiKey,
-                'Content-Type' => $this->getMimeType($ext),
-            ];
 
             // Parámetros query
             $params = [
@@ -68,11 +63,13 @@ class AzureDocumentTranslationService
             // Construir URL con parámetros
             $url .= '&' . http_build_query($params);
 
-            // Hacer solicitud con contenido binario
-            $response = Http::withHeaders($headers)
-                ->timeout(120)
-                ->withBody($fileContent, $this->getMimeType($ext))
-                ->post($url);
+            // Hacer solicitud con multipart/form-data (requerido por Azure)
+            $response = Http::withHeaders([
+                'Ocp-Apim-Subscription-Key' => $this->apiKey,
+            ])
+            ->timeout(120)
+            ->attach('Document', $fileContent, $fileName)
+            ->post($url);
 
             if (!$response->successful()) {
                 Log::error("Azure Document Translation error", [
