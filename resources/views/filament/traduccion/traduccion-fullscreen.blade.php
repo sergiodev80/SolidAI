@@ -196,6 +196,22 @@
         50% { width: 70%; }
         100% { width: 100%; }
     }
+
+    /* Forzar tema light en OnlyOffice */
+    #onlyoffice-container {
+        color-scheme: light;
+    }
+
+    #onlyoffice-container * {
+        color-scheme: light !important;
+    }
+
+    /* Prevenir dark mode en OnlyOffice */
+    @media (prefers-color-scheme: dark) {
+        #onlyoffice-container {
+            color-scheme: light !important;
+        }
+    }
 </style>
 
 <div class="traduccion-wrapper">
@@ -679,6 +695,7 @@
         };
 
         console.log('Inicializando OnlyOffice con:', config);
+        console.log('Tema configurado:', config.editorConfig.customization.theme);
 
         if (typeof DocsAPI !== 'undefined') {
             try {
