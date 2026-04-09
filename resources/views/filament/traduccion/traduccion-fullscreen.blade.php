@@ -330,8 +330,8 @@
                         <strong>Páginas</strong>
                         <span style="display: block; margin-top: 0.25rem; font-size: 0.875rem;">{{ $asignacion->pag_inicio }} - {{ $asignacion->pag_fin }}</span>
                     </div>
-                    <div class="page-meta">
-                        <strong>Idiomas</strong>
+                    <div>
+                        <strong style="font-size: 0.875rem;">Idiomas</strong>
                         @php
                             $langNames = [
                                 1 => 'Español',
@@ -348,7 +348,10 @@
                             $langOriginalName = $langNames[$asignacion->id_idiom_original] ?? 'N/A';
                             $langTraducirName = $langNames[$asignacion->id_idiom] ?? 'N/A';
                         @endphp
-                        <span style="display: block; margin-top: 0.25rem; font-size: 0.75rem;">{{ $langOriginalName }} → {{ $langTraducirName }}</span>
+                        <button id="btn-editar-idiomas" type="button" style="width: 100%; padding: 0.35rem 0.75rem; background: white; color: #374151; border: 1px solid #e5e7eb; border-radius: 0.375rem; font-weight: 500; cursor: pointer; font-size: 0.75rem; text-align: center; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-top: 0.25rem;">
+                            <span style="flex: 1;">{{ $langOriginalName }} → {{ $langTraducirName }}</span>
+                            <span style="font-size: 0.875rem;">✏️</span>
+                        </button>
                     </div>
                 </div>
 
@@ -364,12 +367,6 @@
 
                 {{-- BLOQUE 2: CAMBIOS --}}
                 <h3 style="margin-top: 1rem; margin-bottom: 1rem; font-size: 0.95rem; color: #1f2937; font-weight: 600;">CAMBIOS</h3>
-
-                {{-- Idiomas - Botón para abrir modal --}}
-                <button id="btn-editar-idiomas" type="button" style="width: 100%; padding: 0.5rem 1rem; background: white; color: #374151; border: 1px solid #e5e7eb; border-radius: 0.375rem; font-weight: 500; cursor: pointer; font-size: 0.875rem; text-align: center; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 1rem;">
-                    <span style="flex: 1;">{{ $langOriginalName }} → {{ $langTraducirName }}</span>
-                    <span style="font-size: 1rem;">✏️</span>
-                </button>
 
                 <p style="text-align: center; padding: 1rem 0; color: #9ca3af; font-size: 0.875rem;">
                     Sin cambios aún
