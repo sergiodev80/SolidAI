@@ -158,7 +158,7 @@ class DocumentConversionService
             ->timeout(120)
             ->withBody($fileContent, 'application/octet-stream')
             ->post(
-                $this->docIntelligenceEndpoint . '/documentintelligence/documentModels/prebuilt-document:analyze?api-version=2024-02-29-preview'
+                $this->docIntelligenceEndpoint . '/documentintelligence/documentModels/prebuilt-read:analyze?api-version=2024-02-29-preview'
             );
 
             // Azure Doc Intelligence API es asincrónica y devuelve 202 Accepted
@@ -274,7 +274,7 @@ class DocumentConversionService
             ->timeout(120)
             ->withBody($imageContent, 'application/octet-stream')
             ->post(
-                $this->docIntelligenceEndpoint . '/documentintelligence/documentModels/prebuilt-document:analyze?api-version=2024-02-29-preview'
+                $this->docIntelligenceEndpoint . '/documentintelligence/documentModels/prebuilt-read:analyze?api-version=2024-02-29-preview'
             );
 
             // Azure Doc Intelligence API es asincrónica y devuelve 202 Accepted
