@@ -293,13 +293,29 @@
             </div>
         </div>
 
-        {{-- Panel Derecho: Cambios --}}
+        {{-- Panel Derecho: Asignación y Cambios --}}
         <div class="traduccion-panel panel-cambios">
+            {{-- BLOQUE 1: ASIGNACIÓN --}}
             <div class="traduccion-panel-header">
-                <h2>CAMBIOS</h2>
+                <h2>ASIGNACIÓN</h2>
             </div>
             <div class="traduccion-panel-content">
+                {{-- Presupuesto --}}
+                <div class="page-meta" style="margin-bottom: 1rem;">
+                    <strong>Presupuesto</strong>
+                    <span style="display: block; margin-top: 0.5rem; font-size: 0.875rem;">{{ $asignacion->adjunto->presupuesto?->id_pres ?? 'N/A' }}</span>
+                </div>
+
+                {{-- Nombre Presupuesto --}}
+                <div class="page-meta" style="margin-bottom: 1rem;">
+                    <strong>Nombre Presupuesto</strong>
+                    <span style="display: block; margin-top: 0.5rem; font-size: 0.875rem;">{{ $asignacion->adjunto->presupuesto?->nomb_pres ?? 'N/A' }}</span>
+                </div>
+
+                <hr class="cambios-divider">
+
                 {{-- Select de Traductores --}}
+                <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 0.5rem; font-size: 0.875rem;">Traductor</label>
                 <select class="traductores-select" onchange="window.location.href='/admin/traduccion/' + this.value">
                     @foreach($traductoresAsignados as $id => $login)
                         <option value="{{ $id }}" @if($id === $asignacion->id) selected @endif>
@@ -308,17 +324,24 @@
                     @endforeach
                 </select>
 
-                {{-- Información de Páginas y Estado --}}
-                <div class="page-meta">
-                    <strong>Páginas</strong>
+                {{-- Páginas Asignadas --}}
+                <div class="page-meta" style="margin-top: 1rem; margin-bottom: 1rem;">
+                    <strong>Páginas Asignadas</strong>
                     <span style="display: block; margin-top: 0.5rem;">{{ $asignacion->pag_inicio }} - {{ $asignacion->pag_fin }}</span>
                 </div>
 
-                <div style="margin-top: 0.5rem;">
-                    <span class="estado-label">{{ $asignacion->estado }}</span>
+                {{-- Estado --}}
+                <div style="margin-bottom: 1rem;">
+                    <strong style="font-size: 0.875rem;">Estado</strong>
+                    <div style="margin-top: 0.5rem;">
+                        <span class="estado-label">{{ $asignacion->estado }}</span>
+                    </div>
                 </div>
 
                 <hr class="cambios-divider">
+
+                {{-- BLOQUE 2: CAMBIOS --}}
+                <h3 style="margin-top: 1rem; margin-bottom: 1rem; font-size: 0.95rem; color: #1f2937; font-weight: 600;">CAMBIOS</h3>
 
                 {{-- Idiomas - Botón para abrir modal --}}
                 @php
@@ -338,13 +361,12 @@
                     $langTraducirName = $langNames[$asignacion->id_idiom] ?? 'Desconocido';
                 @endphp
 
-                <button id="btn-editar-idiomas" type="button" style="width: 100%; padding: 0.5rem 1rem; background: white; color: #374151; border: 1px solid #e5e7eb; border-radius: 0.375rem; font-weight: 500; cursor: pointer; font-size: 0.875rem; text-align: center; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
+                <button id="btn-editar-idiomas" type="button" style="width: 100%; padding: 0.5rem 1rem; background: white; color: #374151; border: 1px solid #e5e7eb; border-radius: 0.375rem; font-weight: 500; cursor: pointer; font-size: 0.875rem; text-align: center; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 1rem;">
                     <span style="flex: 1;">{{ $langOriginalName }} → {{ $langTraducirName }}</span>
                     <span style="font-size: 1rem;">✏️</span>
                 </button>
 
-                <hr class="cambios-divider">
-                <p style="text-align: center; padding: 2rem 0;">
+                <p style="text-align: center; padding: 1rem 0; color: #9ca3af; font-size: 0.875rem;">
                     Sin cambios aún
                 </p>
             </div>

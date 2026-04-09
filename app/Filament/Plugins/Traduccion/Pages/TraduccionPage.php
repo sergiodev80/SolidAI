@@ -28,12 +28,14 @@ class TraduccionPage extends Page
     protected function getViewData(): array
     {
         return array_merge(parent::getViewData(), [
+            'asignacion' => $this->asignacion,
             'documento' => $this->asignacion->adjunto,
             'traductoresAsignados' => $this->traductoresAsignados,
             'pdfOriginalUrl' => $this->pdfOriginalUrl,
             'documentoV1Url' => $this->documentoV1Url,
             'documentoTraducido' => $this->documentoTraducido,
             'targetLanguage' => $this->targetLanguage,
+            'latestVersion' => $this->latestVersion,
         ]);
     }
 
