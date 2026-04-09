@@ -82,6 +82,11 @@ class TraduccionPage extends Page
             ->get(['id', 'login'])
             ->pluck('login', 'id');
 
+        // Obtener idioma destino del asignación (antes de detectar documentos)
+        if ($this->asignacion->id_idiom) {
+            $this->targetLanguage = $this->getLanguageCode($this->asignacion->id_idiom);
+        }
+
         // Obtener o descargar PDF original (URL absoluta para PDF.js)
         $pdfService = app(PdfOriginalService::class);
         $pdfRelativeUrl = $pdfService->obtenerPdfOriginal($this->asignacion);
@@ -110,11 +115,6 @@ class TraduccionPage extends Page
                     }
                 }
             }
-        }
-
-        // Obtener idioma destino del asignación
-        if ($this->asignacion->id_idiom) {
-            $this->targetLanguage = $this->getLanguageCode($this->asignacion->id_idiom);
         }
     }
 
