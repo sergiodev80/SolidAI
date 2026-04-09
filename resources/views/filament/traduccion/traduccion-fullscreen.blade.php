@@ -685,6 +685,7 @@
                     "name": "{{ auth()->user()->name ?? 'Usuario' }}"
                 },
                 "customization": {
+                    "uiTheme": "{{ config('traduccion.onlyoffice.theme', 'light') }}",
                     "theme": "{{ config('traduccion.onlyoffice.theme', 'light') }}",
                     "hideRightMenu": true,
                     "hideLeftMenu": true
