@@ -4,7 +4,7 @@
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
 
 <!-- OnlyOffice API -->
-<script src="https://ds.onioffice.com/web-apps/apps/api/documents/api.js"></script>
+<script src="{{ config('services.onlyoffice.url') }}web-apps/apps/api/documents/api.js"></script>
 
 <style>
     /* Ocultar sidebar, titulo de Filament, encabezado y topbar */
