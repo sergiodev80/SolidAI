@@ -300,40 +300,62 @@
                 <h2>ASIGNACIÓN</h2>
             </div>
             <div class="traduccion-panel-content">
-                {{-- Presupuesto --}}
-                <div class="page-meta" style="margin-bottom: 1rem;">
-                    <strong>Presupuesto</strong>
-                    <span style="display: block; margin-top: 0.5rem; font-size: 0.875rem;">{{ $asignacion->adjunto->presupuesto?->id_pres ?? 'N/A' }}</span>
+                {{-- Fila 1: Presupuesto | Nombre (dos columnas) --}}
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div class="page-meta">
+                        <strong>Presupuesto</strong>
+                        <span style="display: block; margin-top: 0.25rem; font-size: 0.875rem;">{{ $asignacion->adjunto->presupuesto?->id_pres ?? 'N/A' }}</span>
+                    </div>
+                    <div class="page-meta">
+                        <strong>Nombre</strong>
+                        <span style="display: block; margin-top: 0.25rem; font-size: 0.75rem; word-wrap: break-word;">{{ $asignacion->adjunto->presupuesto?->nomb_pres ?? 'N/A' }}</span>
+                    </div>
                 </div>
 
-                {{-- Nombre Presupuesto --}}
-                <div class="page-meta" style="margin-bottom: 1rem;">
-                    <strong>Nombre Presupuesto</strong>
-                    <span style="display: block; margin-top: 0.5rem; font-size: 0.875rem;">{{ $asignacion->adjunto->presupuesto?->nomb_pres ?? 'N/A' }}</span>
+                {{-- Fila 2: Traductor (ancho completo) --}}
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 0.5rem; font-size: 0.875rem;">Traductor</label>
+                    <select class="traductores-select" onchange="window.location.href='/admin/traduccion/' + this.value">
+                        @foreach($traductoresAsignados as $id => $login)
+                            <option value="{{ $id }}" @if($id === $asignacion->id) selected @endif>
+                                {{ $login }}
+                            </option>
+                        @endforeach
+                    </select>
                 </div>
 
-                <hr class="cambios-divider">
-
-                {{-- Select de Traductores --}}
-                <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 0.5rem; font-size: 0.875rem;">Traductor</label>
-                <select class="traductores-select" onchange="window.location.href='/admin/traduccion/' + this.value">
-                    @foreach($traductoresAsignados as $id => $login)
-                        <option value="{{ $id }}" @if($id === $asignacion->id) selected @endif>
-                            {{ $login }}
-                        </option>
-                    @endforeach
-                </select>
-
-                {{-- Páginas Asignadas --}}
-                <div class="page-meta" style="margin-top: 1rem; margin-bottom: 1rem;">
-                    <strong>Páginas Asignadas</strong>
-                    <span style="display: block; margin-top: 0.5rem;">{{ $asignacion->pag_inicio }} - {{ $asignacion->pag_fin }}</span>
+                {{-- Fila 3: Páginas Asignadas | Idiomas (dos columnas) --}}
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div class="page-meta">
+                        <strong>Páginas</strong>
+                        <span style="display: block; margin-top: 0.25rem; font-size: 0.875rem;">{{ $asignacion->pag_inicio }} - {{ $asignacion->pag_fin }}</span>
+                    </div>
+                    <div class="page-meta">
+                        <strong>Idiomas</strong>
+                        @php
+                            $langNames = [
+                                1 => 'Español',
+                                2 => 'Inglés',
+                                3 => 'Portugués',
+                                4 => 'Francés',
+                                5 => 'Alemán',
+                                6 => 'Italiano',
+                                7 => 'Japonés',
+                                8 => 'Chino',
+                                9 => 'Ruso',
+                                10 => 'Árabe',
+                            ];
+                            $langOriginalName = $langNames[$asignacion->id_idiom_original] ?? 'N/A';
+                            $langTraducirName = $langNames[$asignacion->id_idiom] ?? 'N/A';
+                        @endphp
+                        <span style="display: block; margin-top: 0.25rem; font-size: 0.75rem;">{{ $langOriginalName }} → {{ $langTraducirName }}</span>
+                    </div>
                 </div>
 
-                {{-- Estado --}}
+                {{-- Fila 4: Estado (ancho completo) --}}
                 <div style="margin-bottom: 1rem;">
                     <strong style="font-size: 0.875rem;">Estado</strong>
-                    <div style="margin-top: 0.5rem;">
+                    <div style="margin-top: 0.25rem;">
                         <span class="estado-label">{{ $asignacion->estado }}</span>
                     </div>
                 </div>
@@ -344,23 +366,6 @@
                 <h3 style="margin-top: 1rem; margin-bottom: 1rem; font-size: 0.95rem; color: #1f2937; font-weight: 600;">CAMBIOS</h3>
 
                 {{-- Idiomas - Botón para abrir modal --}}
-                @php
-                    $langNames = [
-                        1 => 'Español',
-                        2 => 'Inglés',
-                        3 => 'Portugués',
-                        4 => 'Francés',
-                        5 => 'Alemán',
-                        6 => 'Italiano',
-                        7 => 'Japonés',
-                        8 => 'Chino',
-                        9 => 'Ruso',
-                        10 => 'Árabe',
-                    ];
-                    $langOriginalName = $langNames[$asignacion->id_idiom_original] ?? 'Desconocido';
-                    $langTraducirName = $langNames[$asignacion->id_idiom] ?? 'Desconocido';
-                @endphp
-
                 <button id="btn-editar-idiomas" type="button" style="width: 100%; padding: 0.5rem 1rem; background: white; color: #374151; border: 1px solid #e5e7eb; border-radius: 0.375rem; font-weight: 500; cursor: pointer; font-size: 0.875rem; text-align: center; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 1rem;">
                     <span style="flex: 1;">{{ $langOriginalName }} → {{ $langTraducirName }}</span>
                     <span style="font-size: 1rem;">✏️</span>
