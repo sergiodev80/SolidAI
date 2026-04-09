@@ -4,12 +4,24 @@ namespace App\Services;
 
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Process;
+use Illuminate\Support\Facades\Http;
 
 class DocumentConversionService
 {
+    private ?string $docIntelligenceEndpoint = null;
+    private ?string $docIntelligenceKey = null;
+
+    public function __construct()
+    {
+        $this->docIntelligenceEndpoint = config('services.azure_doc_intelligence.endpoint');
+        $this->docIntelligenceKey = config('services.azure_doc_intelligence.key');
+    }
+
     /**
      * Convierte un documento a DOCX
-     * Soporta: PDF, DOC, JPG, JPEG, PNG
+     * - PDF con texto: Usar Python pdf2docx
+     * - PDF escaneado/imagen: Usar Azure Doc Intelligence
+     * - Imágenes: Usar Azure Doc Intelligence
      */
     public function convertToDocx(string $inputPath, string $outputPath): bool
     {
@@ -34,8 +46,9 @@ class DocumentConversionService
 
             // Convertir según el tipo
             return match ($ext) {
-                'pdf', 'doc', 'docm' => $this->convertWithLibreOffice($inputPath, $outputPath),
+                'pdf' => $this->convertPdfToDocx($inputPath, $outputPath),
                 'jpg', 'jpeg', 'png', 'bmp' => $this->convertImageToDocx($inputPath, $outputPath),
+                'doc', 'docm' => $this->convertWithLibreOffice($inputPath, $outputPath),
                 default => false,
             };
         } catch (\Exception $e) {
@@ -49,14 +62,315 @@ class DocumentConversionService
     }
 
     /**
-     * Convierte documento usando LibreOffice (para PDF, DOC, etc)
+     * Convierte PDF a DOCX
+     * Primero intenta con pdf2docx (para PDF con texto)
+     * Si falla, usa Azure Doc Intelligence (para PDF escaneado)
+     */
+    private function convertPdfToDocx(string $inputPath, string $outputPath): bool
+    {
+        // Intentar primero con pdf2docx (más rápido y económico)
+        if ($this->convertPdfWithPdf2Docx($inputPath, $outputPath)) {
+            return true;
+        }
+
+        Log::info("pdf2docx no pudo convertir, intentando con Azure Doc Intelligence");
+
+        // Si pdf2docx falla, usar Azure Doc Intelligence (para PDF escaneado)
+        return $this->convertPdfWithDocIntelligence($inputPath, $outputPath);
+    }
+
+    /**
+     * Convierte PDF con texto usando pdf2docx (Python)
+     */
+    private function convertPdfWithPdf2Docx(string $inputPath, string $outputPath): bool
+    {
+        try {
+            // Verificar si pdf2docx está instalado
+            $process = Process::run(['which', 'pdf2docx'], timeout: 5);
+            if (!$process->successful()) {
+                // Intentar instalar
+                Log::info("Instalando pdf2docx...");
+                Process::run(['pip', 'install', 'pdf2docx'], timeout: 120);
+            }
+
+            // Convertir PDF a DOCX
+            $command = [
+                'pdf2docx',
+                'convert',
+                $inputPath,
+                $outputPath,
+            ];
+
+            $process = Process::run($command, timeout: 60);
+
+            if ($process->successful() && file_exists($outputPath)) {
+                Log::info("PDF convertido exitosamente con pdf2docx", [
+                    'input' => $inputPath,
+                    'output' => $outputPath,
+                ]);
+                return true;
+            }
+
+            Log::warning("pdf2docx conversion failed", [
+                'input' => $inputPath,
+                'error' => $process->errorOutput(),
+            ]);
+            return false;
+        } catch (\Exception $e) {
+            Log::warning("pdf2docx conversion exception", [
+                'input' => $inputPath,
+                'error' => $e->getMessage(),
+            ]);
+            return false;
+        }
+    }
+
+    /**
+     * Convierte PDF escaneado/imagen con Azure Doc Intelligence
+     */
+    private function convertPdfWithDocIntelligence(string $inputPath, string $outputPath): bool
+    {
+        try {
+            if (!$this->docIntelligenceEndpoint || !$this->docIntelligenceKey) {
+                Log::warning("Azure Doc Intelligence no está configurado");
+                return false;
+            }
+
+            // Leer archivo
+            $fileContent = file_get_contents($inputPath);
+            if ($fileContent === false) {
+                Log::error("No se pudo leer archivo PDF");
+                return false;
+            }
+
+            // Llamar a Azure Doc Intelligence
+            $response = Http::withHeaders([
+                'Ocp-Apim-Subscription-Key' => $this->docIntelligenceKey,
+                'Content-Type' => 'application/octet-stream',
+            ])
+            ->timeout(120)
+            ->post(
+                $this->docIntelligenceEndpoint . '/documentintelligence/documentModels/prebuilt-document:analyze?api-version=2024-02-29-preview',
+                $fileContent
+            );
+
+            if (!$response->successful()) {
+                Log::error("Azure Doc Intelligence error", [
+                    'status' => $response->status(),
+                    'error' => $response->body(),
+                ]);
+                return false;
+            }
+
+            // Obtener resultados
+            $result = $response->json();
+
+            // Extraer texto y crear DOCX
+            $text = $this->extractTextFromDocIntelligenceResult($result);
+
+            // Crear documento DOCX con el texto extraído
+            return $this->createDocxFromText($text, $outputPath);
+        } catch (\Exception $e) {
+            Log::error("Azure Doc Intelligence conversion error", [
+                'input' => $inputPath,
+                'error' => $e->getMessage(),
+            ]);
+            return false;
+        }
+    }
+
+    /**
+     * Convierte imagen a DOCX usando Azure Doc Intelligence
+     */
+    private function convertImageToDocx(string $inputPath, string $outputPath): bool
+    {
+        try {
+            if (!$this->docIntelligenceEndpoint || !$this->docIntelligenceKey) {
+                Log::warning("Azure Doc Intelligence no está configurado, usando fallback");
+                return $this->convertImageToDocxFallback($inputPath, $outputPath);
+            }
+
+            // Leer imagen
+            $imageContent = file_get_contents($inputPath);
+            if ($imageContent === false) {
+                Log::error("No se pudo leer archivo de imagen");
+                return false;
+            }
+
+            // Llamar a Azure Doc Intelligence
+            $response = Http::withHeaders([
+                'Ocp-Apim-Subscription-Key' => $this->docIntelligenceKey,
+                'Content-Type' => 'application/octet-stream',
+            ])
+            ->timeout(120)
+            ->post(
+                $this->docIntelligenceEndpoint . '/documentintelligence/documentModels/prebuilt-document:analyze?api-version=2024-02-29-preview',
+                $imageContent
+            );
+
+            if (!$response->successful()) {
+                Log::warning("Azure Doc Intelligence failed, usando fallback", [
+                    'status' => $response->status(),
+                ]);
+                return $this->convertImageToDocxFallback($inputPath, $outputPath);
+            }
+
+            // Extraer texto
+            $result = $response->json();
+            $text = $this->extractTextFromDocIntelligenceResult($result);
+
+            // Crear DOCX con texto e imagen
+            return $this->createDocxFromTextAndImage($text, $inputPath, $outputPath);
+        } catch (\Exception $e) {
+            Log::warning("Azure Doc Intelligence image conversion failed, usando fallback", [
+                'error' => $e->getMessage(),
+            ]);
+            return $this->convertImageToDocxFallback($inputPath, $outputPath);
+        }
+    }
+
+    /**
+     * Fallback: Insertar imagen en DOCX sin OCR
+     */
+    private function convertImageToDocxFallback(string $inputPath, string $outputPath): bool
+    {
+        try {
+            $phpWord = new \PhpOffice\PhpWord\PhpWord();
+            $section = $phpWord->addSection();
+
+            $imageSize = getimagesize($inputPath);
+            if (!$imageSize) {
+                Log::warning("No se pueden obtener dimensiones de la imagen");
+                return false;
+            }
+
+            $maxWidth = 19;
+            $width = min($maxWidth, $imageSize[0] / 37.8);
+
+            $section->addImage($inputPath, [
+                'width' => $width,
+                'height' => null,
+                'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER,
+            ]);
+
+            $objWriter = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'Word2007');
+            $objWriter->save($outputPath);
+
+            return file_exists($outputPath);
+        } catch (\Exception $e) {
+            Log::error("Fallback image conversion error", [
+                'error' => $e->getMessage(),
+            ]);
+            return false;
+        }
+    }
+
+    /**
+     * Extrae texto del resultado de Azure Doc Intelligence
+     */
+    private function extractTextFromDocIntelligenceResult(array $result): string
+    {
+        try {
+            $text = '';
+
+            if (isset($result['analyzeResult']['content'])) {
+                $text = $result['analyzeResult']['content'];
+            } elseif (isset($result['analyzeResult']['paragraphs'])) {
+                foreach ($result['analyzeResult']['paragraphs'] as $paragraph) {
+                    $text .= $paragraph['content'] . "\n";
+                }
+            }
+
+            return $text;
+        } catch (\Exception $e) {
+            Log::warning("Error extrayendo texto de Doc Intelligence", [
+                'error' => $e->getMessage(),
+            ]);
+            return '';
+        }
+    }
+
+    /**
+     * Crea DOCX desde texto
+     */
+    private function createDocxFromText(string $text, string $outputPath): bool
+    {
+        try {
+            $phpWord = new \PhpOffice\PhpWord\PhpWord();
+            $section = $phpWord->addSection();
+
+            // Dividir en párrafos
+            $paragraphs = explode("\n", $text);
+            foreach ($paragraphs as $para) {
+                if (trim($para) !== '') {
+                    $section->addText($para);
+                }
+            }
+
+            $objWriter = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'Word2007');
+            $objWriter->save($outputPath);
+
+            return file_exists($outputPath);
+        } catch (\Exception $e) {
+            Log::error("Error creando DOCX desde texto", [
+                'error' => $e->getMessage(),
+            ]);
+            return false;
+        }
+    }
+
+    /**
+     * Crea DOCX desde texto e imagen
+     */
+    private function createDocxFromTextAndImage(string $text, string $imagePath, string $outputPath): bool
+    {
+        try {
+            $phpWord = new \PhpOffice\PhpWord\PhpWord();
+            $section = $phpWord->addSection();
+
+            // Insertar imagen
+            $imageSize = getimagesize($imagePath);
+            if ($imageSize) {
+                $maxWidth = 19;
+                $width = min($maxWidth, $imageSize[0] / 37.8);
+
+                $section->addImage($imagePath, [
+                    'width' => $width,
+                    'height' => null,
+                    'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER,
+                ]);
+
+                $section->addTextBreak();
+            }
+
+            // Insertar texto extraído
+            $paragraphs = explode("\n", $text);
+            foreach ($paragraphs as $para) {
+                if (trim($para) !== '') {
+                    $section->addText($para);
+                }
+            }
+
+            $objWriter = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'Word2007');
+            $objWriter->save($outputPath);
+
+            return file_exists($outputPath);
+        } catch (\Exception $e) {
+            Log::error("Error creando DOCX desde texto e imagen", [
+                'error' => $e->getMessage(),
+            ]);
+            return false;
+        }
+    }
+
+    /**
+     * Convierte documento usando LibreOffice (para DOC, DOCM)
      */
     private function convertWithLibreOffice(string $inputPath, string $outputPath): bool
     {
         try {
             $outputDir = dirname($outputPath);
 
-            // Comando libreoffice para convertir
             $process = Process::run([
                 'libreoffice',
                 '--headless',
@@ -73,7 +387,6 @@ class DocumentConversionService
                 return false;
             }
 
-            // LibreOffice crea el archivo con el mismo nombre pero extensión .docx
             $generatedFile = $outputDir . '/' . pathinfo($inputPath, PATHINFO_FILENAME) . '.docx';
 
             if (file_exists($generatedFile) && $generatedFile !== $outputPath) {
@@ -83,50 +396,6 @@ class DocumentConversionService
             return file_exists($outputPath);
         } catch (\Exception $e) {
             Log::error("LibreOffice conversion exception", [
-                'input' => $inputPath,
-                'error' => $e->getMessage(),
-            ]);
-            return false;
-        }
-    }
-
-    /**
-     * Convierte imagen a DOCX
-     * Inserta la imagen en un documento DOCX vacío
-     */
-    private function convertImageToDocx(string $inputPath, string $outputPath): bool
-    {
-        try {
-            // Crear un documento DOCX con la imagen
-            // Usamos PhpWord para crear un DOCX con la imagen incrustada
-            $phpWord = new \PhpOffice\PhpWord\PhpWord();
-            $section = $phpWord->addSection();
-
-            // Obtener dimensiones de la imagen
-            $imageSize = getimagesize($inputPath);
-            if (!$imageSize) {
-                Log::warning("No se pueden obtener dimensiones de la imagen: {$inputPath}");
-                return false;
-            }
-
-            // Calcular tamaño para que quepa en la página (A4: 210mm x 297mm)
-            $maxWidth = 19; // cm
-            $width = min($maxWidth, $imageSize[0] / 37.8); // Convertir px a cm
-
-            // Insertar imagen
-            $section->addImage($inputPath, [
-                'width' => $width,
-                'height' => null, // Mantener proporción
-                'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER,
-            ]);
-
-            // Guardar documento
-            $objWriter = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'Word2007');
-            $objWriter->save($outputPath);
-
-            return file_exists($outputPath);
-        } catch (\Exception $e) {
-            Log::error("Image to DOCX conversion error", [
                 'input' => $inputPath,
                 'error' => $e->getMessage(),
             ]);

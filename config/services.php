@@ -35,6 +35,11 @@ return [
         ],
     ],
 
+    'azure_doc_intelligence' => [
+        'endpoint' => env('AZURE_DOC_INTELLIGENCE_ENDPOINT'),
+        'key' => env('AZURE_DOC_INTELLIGENCE_KEY'),
+    ],
+
     'azure_translator' => [
         'endpoint' => env('AZURE_TRANSLATOR_ENDPOINT', 'https://api.cognitive.microsofttranslator.com'),
         'key' => env('AZURE_TRANSLATOR_KEY'),
