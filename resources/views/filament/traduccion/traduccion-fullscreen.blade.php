@@ -91,6 +91,10 @@
         background: #fafafa;
     }
 
+    .panel-cambios .traduccion-panel-content {
+        padding: 0.75rem;
+    }
+
     .traduccion-footer {
         padding: 1rem 1.5rem;
         border-top: 1px solid #e5e7eb;
