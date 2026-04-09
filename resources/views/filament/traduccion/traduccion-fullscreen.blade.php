@@ -320,7 +320,7 @@
     let totalPages = 0;
     let zoom = 100;
 
-    const pdfUrl = '{{ $pdfOriginalUrl }}';
+    const pdfUrl = '{{ trim($pdfOriginalUrl ?? '') }}';
     const canvas = document.getElementById('pdf-canvas');
     const ctx = canvas ? canvas.getContext('2d') : null;
     const currentPageSpan = document.getElementById('current-page');
@@ -429,11 +429,11 @@
         const config = {
             "document": {
                 "fileType": "docx",
-                "key": "{{ md5($documentoV1Url . time()) }}",
+                "key": "{{ md5(trim($documentoV1Url ?? '') . time()) }}",
                 "title": "Documento Traducción",
-                "url": "{{ $documentoV1Url }}"
+                "url": "{{ trim($documentoV1Url ?? '') }}"
             },
-            "documentType": "text",
+            "documentType": "word",
             "editorConfig": {
                 "mode": "edit",
                 "user": {
