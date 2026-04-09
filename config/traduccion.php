@@ -33,5 +33,6 @@ return [
     'onlyoffice' => [
         'url' => env('ONLYOFFICE_URL'),
         'jwt_secret' => env('ONLYOFFICE_JWT_SECRET'),
+        'theme' => env('ONLYOFFICE_THEME', 'light'), // light o dark
     ],
 ];

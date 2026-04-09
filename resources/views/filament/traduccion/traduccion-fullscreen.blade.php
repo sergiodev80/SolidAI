@@ -669,7 +669,7 @@
                     "name": "{{ auth()->user()->name ?? 'Usuario' }}"
                 },
                 "customization": {
-                    "theme": "light",
+                    "theme": "{{ config('traduccion.onlyoffice.theme', 'light') }}",
                     "hideRightMenu": true,
                     "hideLeftMenu": true
                 }
