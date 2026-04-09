@@ -78,16 +78,25 @@ The Traducción plugin is a complete Laravel 13 + Filament v5 implementation tha
 
 ## Recent Fixes Applied
 
-### UTF-8 JSON Parsing Error - CRITICAL FIX (Committed: 1265dd7)
-**Issue**: Azure Doc Intelligence response contained malformed UTF-8, causing `json_decode()` to fail
-**Previous attempt**: Applied sanitization AFTER JSON parsing (too late)
-**Correct fix**: Sanitize response body BEFORE JSON parsing
-- Clean response with `mb_convert_encoding()` and `preg_replace()`
-- Parse JSON with proper error handling
-- Fallback for images if parsing fails
-- Detailed error logging for debugging
+### CRITICAL FIX: Asynchronous API Implementation (Committed: 40e281c)
+**Issue**: Azure Document Intelligence API is ASYNCHRONOUS, not synchronous!
+**Root Cause**: Code was expecting JSON in POST response body, but Azure returns 202 with Operation-Location header
+**The Fix**: 
+1. POST document to start analysis (get 202 Accepted)
+2. Extract Operation-Location header
+3. Poll the operation URL every 1 second (up to 60 times)
+4. Wait for status === "succeeded"
+5. Extract analyzeResult from successful response
 
-This resolves: `"json_encode error: Malformed UTF-8 characters, possibly incorrectly encoded"`
+This was why ALL previous fixes didn't work - we were parsing an empty response!
+
+### UTF-8 Sanitization Enhancement (Committed: 5001b6c)
+**Issue**: Malformed UTF-8 in responses (secondary to async issue)
+**Fix**: 
+- Extended character set removal (\x7F-\x9F)
+- BOM (Byte Order Mark) removal
+- Better error logging with JSON error codes
+Applied to both PDF and image conversions
 
 ### UTF-8 Character Encoding (Committed: e51644b)
 **Issue**: Extracted text from Azure contained malformed UTF-8
@@ -262,17 +271,16 @@ The plugin expects these columns (all implemented):
 ## Recent Commits
 
 ```
+bd72262 - fix: correct variable name in async polling implementation
+40e281c - CRITICAL FIX: implement proper async handling for Azure Doc Intelligence API
+5001b6c - fix: enhance UTF-8 sanitization with BOM removal and extended control chars
+d4915d4 - fix: improve error logging for JSON parsing failures
+3c37f56 - docs: update status with critical UTF-8 and fallback fixes
 c00400b - fix: improve pdf2docx fallback behavior
 1265dd7 - fix: handle UTF-8 malformed characters BEFORE JSON parsing from Azure
 49b742b - docs: add quick start guide for Traduccion plugin
 49527b5 - docs: add comprehensive Traduccion plugin status report
 ccc6e4e - chore: remove redundant migrations for id_idiom columns
-e51644b - fix: UTF-8 character encoding in Azure Doc Intelligence response parsing
-1985476 - fix: usar sintaxis correcta de timeout en Process para Laravel 13
-dec9ea7 - fix: manejar error en callbackUrl si route() falla
-3e9051b - fix: simplificar inicialización de OnlyOffice y remover JSON inválido
-943f2c6 - refactor: mejorar conversión de documentos con pdf2docx y Doc Intelligence
-49f9109 - feat: implementar servicio de versioning y mejorar callback
 ```
 
 ---
