@@ -167,15 +167,25 @@ class DocumentConversionService
             $responseBody = $response->body();
 
             // Limpiar caracteres UTF-8 malformados antes de parsear JSON
+            // 1. Normalizar a UTF-8 válido
             $responseBody = mb_convert_encoding($responseBody, 'UTF-8', 'UTF-8');
-            $responseBody = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $responseBody);
+
+            // 2. Remover caracteres de control (excepto tab, newline, carriage return)
+            $responseBody = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]/u', '', $responseBody);
+
+            // 3. Remover BOM (Byte Order Mark) si existe
+            if (substr($responseBody, 0, 3) === "\xEF\xBB\xBF") {
+                $responseBody = substr($responseBody, 3);
+            }
 
             $result = json_decode($responseBody, true);
             if ($result === null && json_last_error() !== JSON_ERROR_NONE) {
                 Log::error("JSON parse error from Azure response", [
                     'input' => $inputPath,
                     'error' => json_last_error_msg(),
-                    'body_sample' => substr($responseBody, 0, 500),
+                    'json_error_code' => json_last_error(),
+                    'body_length' => strlen($responseBody),
+                    'body_sample' => substr($responseBody, 0, 200),
                 ]);
                 return false;
             }
@@ -235,20 +245,22 @@ class DocumentConversionService
             $responseBody = $response->body();
 
             // Limpiar caracteres UTF-8 malformados antes de parsear JSON
+            // 1. Normalizar a UTF-8 válido
             $responseBody = mb_convert_encoding($responseBody, 'UTF-8', 'UTF-8');
-            $responseBody = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $responseBody);
 
-            try {
-                $result = json_decode($responseBody, true);
-                if ($result === null && json_last_error() !== JSON_ERROR_NONE) {
-                    Log::warning("JSON parse error from Azure in image conversion, using fallback", [
-                        'error' => json_last_error_msg(),
-                    ]);
-                    return $this->convertImageToDocxFallback($inputPath, $outputPath);
-                }
-            } catch (\Exception $e) {
-                Log::warning("JSON parsing exception in image conversion, using fallback", [
-                    'error' => $e->getMessage(),
+            // 2. Remover caracteres de control (excepto tab, newline, carriage return)
+            $responseBody = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]/u', '', $responseBody);
+
+            // 3. Remover BOM (Byte Order Mark) si existe
+            if (substr($responseBody, 0, 3) === "\xEF\xBB\xBF") {
+                $responseBody = substr($responseBody, 3);
+            }
+
+            $result = json_decode($responseBody, true);
+            if ($result === null && json_last_error() !== JSON_ERROR_NONE) {
+                Log::warning("JSON parse error from Azure in image conversion, using fallback", [
+                    'error' => json_last_error_msg(),
+                    'json_error_code' => json_last_error(),
                 ]);
                 return $this->convertImageToDocxFallback($inputPath, $outputPath);
             }
