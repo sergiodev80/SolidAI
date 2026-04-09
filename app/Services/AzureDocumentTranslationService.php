@@ -68,10 +68,11 @@ class AzureDocumentTranslationService
             // Construir URL con parámetros
             $url .= '&' . http_build_query($params);
 
-            // Hacer solicitud
+            // Hacer solicitud con contenido binario
             $response = Http::withHeaders($headers)
                 ->timeout(120)
-                ->post($url, $fileContent);
+                ->withBody($fileContent, $this->getMimeType($ext))
+                ->post($url);
 
             if (!$response->successful()) {
                 Log::error("Azure Document Translation error", [
