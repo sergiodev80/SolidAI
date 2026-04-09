@@ -252,25 +252,10 @@
                         </span>
                     @endif
                 </div>
-                @if($documentoTraducido && $latestVersion === 1)
-                    <button id="btn-traducir-ia" type="button" style="padding: 0.5rem 1rem; background: #2563eb; color: white; border: none; border-radius: 0.375rem; font-weight: 600; cursor: pointer; font-size: 0.875rem;">
-                        🤖 Traducir con IA
-                    </button>
-                @elseif($documentoTraducido && $latestVersion === 2)
-                    <div style="display: flex; gap: 0.5rem; align-items: center;">
-                        <span style="padding: 0.5rem 1rem; background: #10b981; color: white; border-radius: 0.375rem; font-weight: 600; font-size: 0.875rem;">
-                            ✓ Traducido
-                        </span>
-                        <button id="btn-eliminar-traduccion" type="button" style="padding: 0.5rem 0.75rem; background: #ef4444; color: white; border: none; border-radius: 0.375rem; font-weight: 600; cursor: pointer; font-size: 0.875rem;" title="Eliminar archivo traducido">
-                            🗑️
-                        </button>
-                    </div>
-                @endif
             </div>
             <div class="traduccion-panel-content">
-                @if($documentoTraducido)
-                    <div id="onlyoffice-container" style="width: 100%; height: 100%;"></div>
-                @else
+                @if(!$documentoTraducido)
+                    {{-- Sin documento extraído --}}
                     <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 1.5rem;">
                         <div style="text-align: center;">
                             <p style="margin: 0; color: #6b7280; font-size: 0.875rem; margin-bottom: 0.5rem;">
@@ -289,6 +274,21 @@
                             </div>
                         </div>
                     </div>
+                @elseif($documentoTraducido && str_contains($documentoV1Url ?? '', 'documento_V1.docx') && !str_contains($documentoV1Url ?? '', '_V1.docx'))
+                    {{-- Documento extraído pero sin traducir (documento_V1.docx sin sufijo de idioma) --}}
+                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 1.5rem;">
+                        <div style="text-align: center;">
+                            <p style="margin: 0; color: #6b7280; font-size: 0.875rem; margin-bottom: 0.5rem;">
+                                Documento extraído. Listo para traducir
+                            </p>
+                            <button id="btn-traducir-ia" type="button" style="padding: 0.75rem 1.5rem; background: #2563eb; color: white; border: none; border-radius: 0.375rem; font-weight: 600; cursor: pointer; font-size: 0.875rem;">
+                                🤖 Traducir con IA
+                            </button>
+                        </div>
+                    </div>
+                @else
+                    {{-- Documento traducido - mostrar en OnlyOffice --}}
+                    <div id="onlyoffice-container" style="width: 100%; height: 100%;"></div>
                 @endif
             </div>
         </div>
