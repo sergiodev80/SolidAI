@@ -553,10 +553,8 @@
         btn.style.opacity = '0.6';
         btn.textContent = '⏳ Traduciendo...';
 
-        // Obtener idioma seleccionado del selector
-        const idiomaSelectorElement = document.getElementById('select-idioma-traducir');
-        const idiomId = idiomaSelectorElement ? idiomaSelectorElement.value : '2';
-        const targetLanguageCode = langCodeMap[idiomId] || 'es';
+        // Usar el idioma de la asignación (no del selector del modal)
+        const targetLanguageCode = '{{ $targetLanguage ?? "es" }}';
 
         try {
             const response = await fetch('/admin/traduccion/traducir-ai/{{ $asignacion->id }}', {
