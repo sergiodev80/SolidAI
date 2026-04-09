@@ -71,7 +71,7 @@
     .traduccion-panel-content {
         flex: 1;
         overflow-y: auto;
-        padding: 1rem;
+        padding: 0px;
         background: #ffffff;
         color: #6b7280;
         font-size: 0.875rem;
@@ -667,6 +667,11 @@
                 "user": {
                     "id": "{{ auth()->id() }}",
                     "name": "{{ auth()->user()->name ?? 'Usuario' }}"
+                },
+                "customization": {
+                    "theme": "light",
+                    "hideRightMenu": true,
+                    "hideLeftMenu": true
                 }
             },
             "height": "100%",
