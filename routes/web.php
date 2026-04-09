@@ -34,6 +34,10 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::post('/admin/traduccion/guardar-idiomas/{id_asignacion}', [\App\Http\Controllers\TraduccionAiController::class, 'guardarIdiomas'])
         ->name('traduccion.guardar-idiomas');
 
+    // Eliminar traducción (V2)
+    Route::post('/admin/traduccion/eliminar-traduccion/{id_asignacion}', [\App\Http\Controllers\TraduccionAiController::class, 'eliminarTraduccion'])
+        ->name('traduccion.eliminar-traduccion');
+
     // OnlyOffice Callbacks
     Route::post('/api/onlyoffice/callback', [\App\Http\Controllers\OnlyOfficeCallbackController::class, 'callback'])
         ->name('onlyoffice.callback');

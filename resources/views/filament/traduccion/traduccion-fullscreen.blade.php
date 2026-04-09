@@ -257,9 +257,14 @@
                         🤖 Traducir con IA
                     </button>
                 @elseif($documentoTraducido && $latestVersion === 2)
-                    <span style="padding: 0.5rem 1rem; background: #10b981; color: white; border-radius: 0.375rem; font-weight: 600; font-size: 0.875rem;">
-                        ✓ Traducido
-                    </span>
+                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        <span style="padding: 0.5rem 1rem; background: #10b981; color: white; border-radius: 0.375rem; font-weight: 600; font-size: 0.875rem;">
+                            ✓ Traducido
+                        </span>
+                        <button id="btn-eliminar-traduccion" type="button" style="padding: 0.5rem 0.75rem; background: #ef4444; color: white; border: none; border-radius: 0.375rem; font-weight: 600; cursor: pointer; font-size: 0.875rem;" title="Eliminar archivo traducido">
+                            🗑️
+                        </button>
+                    </div>
                 @endif
             </div>
             <div class="traduccion-panel-content">
@@ -601,6 +606,46 @@
     document.getElementById('modal-idiomas')?.addEventListener('click', function(e) {
         if (e.target === this) {
             this.style.display = 'none';
+        }
+    });
+
+    // Eliminar archivo traducido (V2)
+    document.getElementById('btn-eliminar-traduccion')?.addEventListener('click', async function() {
+        if (!confirm('¿Estás seguro de que deseas eliminar el archivo traducido?')) {
+            return;
+        }
+
+        const btn = this;
+        btn.disabled = true;
+        btn.style.opacity = '0.6';
+        const originalText = btn.textContent;
+        btn.textContent = '⏳';
+
+        try {
+            const response = await fetch('/admin/traduccion/eliminar-traduccion/{{ $asignacion->id }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                }
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                window.location.reload();
+            } else {
+                alert('Error: ' + (data.message || 'Error desconocido'));
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                btn.textContent = originalText;
+            }
+        } catch (error) {
+            console.error('Error eliminando traducción:', error);
+            alert('Error al eliminar: ' + error.message);
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            btn.textContent = originalText;
         }
     });
 

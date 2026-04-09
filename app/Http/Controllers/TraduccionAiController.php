@@ -230,4 +230,68 @@ class TraduccionAiController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Elimina el archivo traducido (V2)
+     * POST /admin/traduccion/eliminar-traduccion/{id_asignacion}
+     */
+    public function eliminarTraduccion(int $id_asignacion): JsonResponse
+    {
+        try {
+            // Validar acceso
+            if (!$this->permissionService->canAccessAsignacion($id_asignacion)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No tienes permiso para acceder a esta asignación',
+                ], 403);
+            }
+
+            // Obtener asignación
+            $asignacion = PresupAdjAsignacion::findOrFail($id_asignacion);
+            $presupuesto = $asignacion->adjunto->presupuesto;
+
+            if (!$presupuesto) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se pudo obtener el presupuesto',
+                ], 500);
+            }
+
+            // Eliminar V2
+            $rutaV2 = public_path("archivos/traducciones/{$presupuesto->id_pres}/{$id_asignacion}/documento_V2.docx");
+            if (file_exists($rutaV2)) {
+                @unlink($rutaV2);
+                Log::info("Archivo V2 eliminado", [
+                    'id_asignacion' => $id_asignacion,
+                    'ruta' => $rutaV2,
+                ]);
+            }
+
+            // Opcionalmente, también eliminar el documento_ai traducido
+            $directorioAi = public_path("archivos/traduccion-ai/{$presupuesto->id_pres}/{$asignacion->id_adjun}");
+            if (is_dir($directorioAi)) {
+                $archivos = glob("{$directorioAi}/*traducido*");
+                foreach ($archivos as $archivo) {
+                    if (is_file($archivo)) {
+                        @unlink($archivo);
+                    }
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Traducción eliminada exitosamente',
+            ]);
+        } catch (\Exception $e) {
+            Log::error("Error eliminando traducción", [
+                'id_asignacion' => $id_asignacion,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error interno: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
 }
