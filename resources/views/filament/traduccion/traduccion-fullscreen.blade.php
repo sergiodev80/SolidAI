@@ -315,7 +315,7 @@
 
                 <hr class="cambios-divider">
 
-                {{-- Idiomas --}}
+                {{-- Idiomas - Botón para abrir modal --}}
                 @php
                     $langNames = [
                         1 => 'Español',
@@ -331,27 +331,11 @@
                     ];
                 @endphp
 
-                <div style="margin-bottom: 1rem;">
-                    <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 0.5rem; font-size: 0.875rem;">Idioma Original</label>
-                    <select id="select-idioma-original" class="traductores-select" style="margin-bottom: 0;">
-                        @foreach($langNames as $id => $name)
-                            <option value="{{ $id }}" @if($id === $asignacion->id_idiom_original) selected @endif>{{ $name }}</option>
-                        @endforeach
-                    </select>
+                <div style="text-align: center;">
+                    <button id="btn-editar-idiomas" type="button" style="width: 100%; padding: 0.5rem 1rem; background: #3b82f6; color: white; border: none; border-radius: 0.375rem; font-weight: 600; cursor: pointer; font-size: 0.875rem;">
+                        ✏️ Editar Idiomas
+                    </button>
                 </div>
-
-                <div style="margin-bottom: 1rem;">
-                    <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 0.5rem; font-size: 0.875rem;">Idioma a Traducir</label>
-                    <select id="select-idioma-traducir" class="traductores-select" style="margin-bottom: 0;">
-                        @foreach($langNames as $id => $name)
-                            <option value="{{ $id }}" @if($id === $asignacion->id_idiom) selected @endif>{{ $name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <button id="btn-guardar-idiomas" type="button" style="width: 100%; padding: 0.5rem; background: #10b981; color: white; border: none; border-radius: 0.375rem; font-weight: 600; cursor: pointer; font-size: 0.875rem; margin-bottom: 1rem;">
-                    ✓ Guardar Idiomas
-                </button>
 
                 <hr class="cambios-divider">
                 <p style="text-align: center; padding: 2rem 0;">
@@ -375,6 +359,54 @@
         </button>
     </div>
 
+</div>
+
+{{-- Modal para editar idiomas --}}
+<div id="modal-idiomas" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: white; border-radius: 0.5rem; padding: 2rem; width: 90%; max-width: 400px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
+        <h3 style="margin: 0 0 1.5rem 0; color: #1f2937; font-size: 1.125rem; font-weight: 600;">Editar Idiomas</h3>
+
+        <div style="margin-bottom: 1.5rem;">
+            <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 0.5rem; font-size: 0.875rem;">Idioma Original</label>
+            <select id="modal-idioma-original" class="traductores-select" style="width: 100%; padding: 0.5rem; border: 1px solid #e5e7eb; border-radius: 0.375rem; font-size: 0.875rem; color: #374151; background: white; cursor: pointer;">
+                @php
+                    $langNames = [
+                        1 => 'Español',
+                        2 => 'Inglés',
+                        3 => 'Portugués',
+                        4 => 'Francés',
+                        5 => 'Alemán',
+                        6 => 'Italiano',
+                        7 => 'Japonés',
+                        8 => 'Chino',
+                        9 => 'Ruso',
+                        10 => 'Árabe',
+                    ];
+                @endphp
+                @foreach($langNames as $id => $name)
+                    <option value="{{ $id }}" @if($id === $asignacion->id_idiom_original) selected @endif>{{ $name }}</option>
+                @endforeach
+            </select>
+        </div>
+
+        <div style="margin-bottom: 2rem;">
+            <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 0.5rem; font-size: 0.875rem;">Idioma a Traducir</label>
+            <select id="modal-idioma-traducir" class="traductores-select" style="width: 100%; padding: 0.5rem; border: 1px solid #e5e7eb; border-radius: 0.375rem; font-size: 0.875rem; color: #374151; background: white; cursor: pointer;">
+                @foreach($langNames as $id => $name)
+                    <option value="{{ $id }}" @if($id === $asignacion->id_idiom) selected @endif>{{ $name }}</option>
+                @endforeach
+            </select>
+        </div>
+
+        <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+            <button id="btn-modal-cancelar" type="button" style="padding: 0.5rem 1rem; background: #e5e7eb; color: #374151; border: none; border-radius: 0.375rem; font-weight: 600; cursor: pointer; font-size: 0.875rem;">
+                Cancelar
+            </button>
+            <button id="btn-modal-guardar" type="button" style="padding: 0.5rem 1rem; background: #10b981; color: white; border: none; border-radius: 0.375rem; font-weight: 600; cursor: pointer; font-size: 0.875rem;">
+                ✓ Guardar
+            </button>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -552,14 +584,30 @@
         }
     });
 
-    // Botón para guardar los idiomas seleccionados
-    document.getElementById('btn-guardar-idiomas')?.addEventListener('click', async function() {
-        const btn = this;
-        const idiomaOriginalSelect = document.getElementById('select-idioma-original');
-        const idiomaTraducirSelect = document.getElementById('select-idioma-traducir');
+    // Abrir modal de idiomas
+    document.getElementById('btn-editar-idiomas')?.addEventListener('click', function() {
+        const modal = document.getElementById('modal-idiomas');
+        modal.style.display = 'flex';
+    });
 
-        const idiomaOriginal = idiomaOriginalSelect ? idiomaOriginalSelect.value : null;
-        const idiomaTraducir = idiomaTraducirSelect ? idiomaTraducirSelect.value : null;
+    // Cerrar modal
+    document.getElementById('btn-modal-cancelar')?.addEventListener('click', function() {
+        const modal = document.getElementById('modal-idiomas');
+        modal.style.display = 'none';
+    });
+
+    // Cerrar modal al clickear fuera
+    document.getElementById('modal-idiomas')?.addEventListener('click', function(e) {
+        if (e.target === this) {
+            this.style.display = 'none';
+        }
+    });
+
+    // Guardar idiomas desde el modal
+    document.getElementById('btn-modal-guardar')?.addEventListener('click', async function() {
+        const btn = this;
+        const idiomaOriginal = document.getElementById('modal-idioma-original').value;
+        const idiomaTraducir = document.getElementById('modal-idioma-traducir').value;
 
         if (!idiomaOriginal || !idiomaTraducir) {
             alert('Por favor selecciona ambos idiomas');
@@ -590,11 +638,9 @@
                 btn.textContent = '✓ Guardado';
                 btn.style.background = '#059669';
                 setTimeout(() => {
-                    btn.disabled = false;
-                    btn.style.opacity = '1';
-                    btn.textContent = originalText;
-                    btn.style.background = '#10b981';
-                }, 2000);
+                    document.getElementById('modal-idiomas').style.display = 'none';
+                    window.location.reload();
+                }, 1000);
             } else {
                 alert('Error: ' + (data.message || 'Error desconocido'));
                 btn.disabled = false;
