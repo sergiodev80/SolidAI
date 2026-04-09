@@ -109,30 +109,11 @@ class TraduccionAiController extends Controller
                 $targetLanguage
             );
 
-            // Si la traducción falla, usar V1 como fallback
             if (!$rutaDocumentoTraducido) {
-                Log::warning("Traducción con Azure falló, usando V1 como fallback", [
-                    'id_asignacion' => $id_asignacion,
-                ]);
-
-                // Obtener ruta de V1 como fallback
-                $presupuesto = $asignacion->adjunto->presupuesto;
-                if ($presupuesto) {
-                    $rutaV1Fallback = "archivos/traducciones/{$presupuesto->id_pres}/{$id_asignacion}/documento_V1.docx";
-                    $rutaV1FullPath = public_path($rutaV1Fallback);
-
-                    if (file_exists($rutaV1FullPath)) {
-                        $rutaDocumentoTraducido = "/{$rutaV1Fallback}";
-                    }
-                }
-
-                // Si aún no hay documento, retornar error
-                if (!$rutaDocumentoTraducido) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Error al traducir documento con Azure. No hay documento V1 para usar como fallback.',
-                    ], 500);
-                }
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error al traducir documento con Azure Translator. Verifica que la suscripción tenga cuota disponible o intenta más tarde.',
+                ], 500);
             }
 
             // Crear versión V2 (traducida o fallback) para la asignación
