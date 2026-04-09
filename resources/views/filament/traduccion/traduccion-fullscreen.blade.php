@@ -314,6 +314,38 @@
                 </div>
 
                 <hr class="cambios-divider">
+
+                {{-- Idiomas --}}
+                @php
+                    $langNames = [
+                        1 => 'Español',
+                        2 => 'Inglés',
+                        3 => 'Portugués',
+                        4 => 'Francés',
+                        5 => 'Alemán',
+                        6 => 'Italiano',
+                        7 => 'Japonés',
+                        8 => 'Chino',
+                        9 => 'Ruso',
+                        10 => 'Árabe',
+                    ];
+                @endphp
+
+                @if($asignacion->id_idiom_original)
+                    <div class="page-meta" style="margin-bottom: 1rem;">
+                        <strong>Idioma Original</strong>
+                        <span style="display: block; margin-top: 0.5rem;">{{ $langNames[$asignacion->id_idiom_original] ?? 'Desconocido' }}</span>
+                    </div>
+                @endif
+
+                @if($asignacion->id_idiom)
+                    <div class="page-meta">
+                        <strong>Idioma a Traducir</strong>
+                        <span style="display: block; margin-top: 0.5rem;">{{ $langNames[$asignacion->id_idiom] ?? 'Desconocido' }}</span>
+                    </div>
+                @endif
+
+                <hr class="cambios-divider">
                 <p style="text-align: center; padding: 2rem 0;">
                     Sin cambios aún
                 </p>
