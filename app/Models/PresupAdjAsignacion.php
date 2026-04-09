@@ -18,6 +18,8 @@ class PresupAdjAsignacion extends Model
         'rol',
         'pag_inicio',
         'pag_fin',
+        'id_idiom',
+        'id_idiom_original',
         'estado',
         'created_at',
     ];

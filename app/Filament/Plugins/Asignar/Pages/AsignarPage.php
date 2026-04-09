@@ -10,9 +10,10 @@ use Filament\Actions\Action;
 use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\View;
+use Filament\Forms\Components\ViewField;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Illuminate\Support\Facades\DB;
 
 class AsignarPage extends Page
 {
@@ -59,6 +60,12 @@ class AsignarPage extends Page
 
     public function asignarAction(): Action
     {
+        // Obtener idiomas del ERP
+        $idiomas = DB::connection('erp')
+            ->table('idiomas')
+            ->pluck('nombre_idiom', 'id_idiom')
+            ->toArray();
+
         return Action::make('asignar')
             ->modalHeading(fn (array $arguments) => 'Añadir asignación — ' . ($arguments['nombre'] ?? ''))
             ->modalWidth('lg')
@@ -71,36 +78,58 @@ class AsignarPage extends Page
                     ])
                     ->inline()
                     ->required()
-                    ->default('traductor'),
+                    ->default('traductor')
+                    ->columnSpanFull(),
 
                 Select::make('login')
                     ->label('Usuario')
                     ->options(fn () => $this->usuarios)
                     ->native(false)
                     ->required()
-                    ->placeholder('Buscar por nombre...'),
+                    ->placeholder('Buscar por nombre...')
+                    ->columnSpanFull(),
+
+                Select::make('id_idiom_original')
+                    ->label('Idioma original')
+                    ->options($idiomas)
+                    ->native(false)
+                    ->required()
+                    ->placeholder('Seleccionar idioma original...')
+                    ->columnSpan(1),
+
+                Select::make('id_idiom')
+                    ->label('Idioma de traducción')
+                    ->options($idiomas)
+                    ->native(false)
+                    ->required()
+                    ->placeholder('Seleccionar idioma de traducción...')
+                    ->columnSpan(1),
 
                 TextInput::make('pag_inicio')
                     ->label('Página inicio')
                     ->numeric()
                     ->minValue(1)
-                    ->required(),
+                    ->required()
+                    ->columnSpan(1),
 
                 TextInput::make('pag_fin')
                     ->label('Página fin')
                     ->numeric()
                     ->minValue(1)
-                    ->required(),
+                    ->required()
+                    ->columnSpan(1),
             ])
             ->action(function (array $data, array $arguments): void {
                 PresupAdjAsignacion::create([
-                    'id_adjun'   => $arguments['id_adjun'],
-                    'login'      => $data['login'],
-                    'rol'        => $data['rol'],
-                    'pag_inicio' => $data['pag_inicio'],
-                    'pag_fin'    => $data['pag_fin'],
-                    'estado'     => 'Asignado',
-                    'created_at' => now(),
+                    'id_adjun'          => $arguments['id_adjun'],
+                    'login'             => $data['login'],
+                    'rol'               => $data['rol'],
+                    'pag_inicio'        => $data['pag_inicio'],
+                    'pag_fin'           => $data['pag_fin'],
+                    'id_idiom_original' => $data['id_idiom_original'],
+                    'id_idiom'          => $data['id_idiom'],
+                    'estado'            => 'Asignado',
+                    'created_at'        => now(),
                 ]);
 
                 Notification::make()
@@ -123,19 +152,21 @@ class AsignarPage extends Page
     public function previsualizarAction(): Action
     {
         return Action::make('previsualizarAction')
-            ->label('📄 Previsualizar')
+            ->label(fn (array $arguments) => $arguments['nombre'] . ' (' . ($arguments['paginas'] ?? '?') . ' pág.)')
             ->color('info')
-            ->icon('heroicon-o-eye')
+            ->icon('heroicon-o-document')
             ->modalHeading(fn (array $arguments) => 'Previsualizar — ' . ($arguments['nombre'] ?? ''))
             ->modalWidth('7xl')
-            ->form([
-                View::make('filament.asignar.preview-modal')
-                    ->viewData(fn (array $arguments) => [
+            ->form(fn (array $arguments) => [
+                ViewField::make('preview')
+                    ->view('filament.asignar.preview-modal')
+                    ->viewData([
                         'filename' => $arguments['filename'] ?? '',
                         'nombre' => $arguments['nombre'] ?? '',
                         'onlyofficeUrl' => config('app.onlyoffice_url'),
                         'onlyofficeJwtSecret' => config('app.onlyoffice_jwt_secret'),
-                    ]),
+                    ])
+                    ->extraAttributes(['class' => 'fi-fo-group-footer-ctn-item-wrapper']),
             ])
             ->modalSubmitAction(false)
             ->modalCloseButton(true)

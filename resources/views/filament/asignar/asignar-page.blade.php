@@ -32,7 +32,15 @@
 
             {{-- Cabecera --}}
             <div class="asignar-card-header">
-                {{ ($this->previsualizarAction)(['filename' => $documento->nombre_archivo, 'nombre' => $documento->nombre_archivo]) }}
+                @php
+                    $ftpController = new \App\Http\Controllers\FtpFileController();
+                    $pageCount = $ftpController->getPdfPageCount($documento->nombre_archivo);
+                @endphp
+                {{ ($this->previsualizarAction)([
+                    'filename' => $documento->nombre_archivo,
+                    'nombre' => $documento->nombre_archivo,
+                    'paginas' => $pageCount
+                ]) }}
                 {{ ($this->asignarAction)(['id_adjun' => $documento->id_adjun, 'nombre' => $documento->nombre_archivo]) }}
             </div>
 

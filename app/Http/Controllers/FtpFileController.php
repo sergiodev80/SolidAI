@@ -5,7 +5,10 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
 use League\Flysystem\Ftp\FtpAdapter;
+use League\Flysystem\Ftp\FtpConnectionOptions;
 use League\Flysystem\Filesystem;
+use Symfony\Component\HttpFoundation\StreamedResponse;
+use Smalot\PdfParser\Parser;
 
 class FtpFileController extends Controller
 {
@@ -13,7 +16,7 @@ class FtpFileController extends Controller
      * Stream archivo desde FTP
      * GET /ftp-file/{filename}
      */
-    public function stream(string $filename): Response
+    public function stream(string $filename): StreamedResponse
     {
         try {
             $filesystem = $this->getFtpFilesystem();
@@ -48,20 +51,83 @@ class FtpFileController extends Controller
      */
     private function getFtpFilesystem(): Filesystem
     {
-        $config = [
+        $options = FtpConnectionOptions::fromArray([
             'host' => config('filesystems.disks.presupuestos_ftp.host'),
             'username' => config('filesystems.disks.presupuestos_ftp.username'),
             'password' => config('filesystems.disks.presupuestos_ftp.password'),
-            'port' => config('filesystems.disks.presupuestos_ftp.port', 21),
+            'port' => (int) config('filesystems.disks.presupuestos_ftp.port', 21),
             'root' => config('filesystems.disks.presupuestos_ftp.root', '/'),
             'ssl' => config('filesystems.disks.presupuestos_ftp.ssl', false),
             'timeout' => 30,
             'utf8' => false,
             'passive' => true,
-        ];
+        ]);
 
-        $adapter = new FtpAdapter($config);
+        $adapter = new FtpAdapter($options);
         return new Filesystem($adapter);
+    }
+
+    /**
+     * Obtiene el número de páginas de un PDF
+     */
+    public function getPdfPageCount(string $filename): int
+    {
+        try {
+            $filesystem = $this->getFtpFilesystem();
+
+            if (!$filesystem->fileExists($filename)) {
+                return 0;
+            }
+
+            $content = $filesystem->read($filename);
+
+            // Guardar temporalmente en /tmp
+            $tempFile = tempnam(sys_get_temp_dir(), 'pdf_');
+            file_put_contents($tempFile, $content);
+
+            $parser = new Parser();
+            $pdf = $parser->parseFile($tempFile);
+            $pages = $pdf->getPages();
+
+            @unlink($tempFile);
+
+            return count($pages);
+        } catch (\Exception $e) {
+            Log::error('Error al obtener páginas del PDF', [
+                'filename' => $filename,
+                'error' => $e->getMessage(),
+            ]);
+            return 0;
+        }
+    }
+
+    /**
+     * Obtiene PDF como blob (para PDF.js)
+     */
+    public function getPdfBlob(string $filename)
+    {
+        try {
+            $filesystem = $this->getFtpFilesystem();
+
+            if (!$filesystem->fileExists($filename)) {
+                abort(404, 'Archivo no encontrado en FTP');
+            }
+
+            $content = $filesystem->read($filename);
+
+            return response($content)
+                ->header('Content-Type', 'application/pdf')
+                ->header('Content-Length', strlen($content))
+                ->header('Cache-Control', 'public, max-age=3600')
+                ->header('Pragma', 'public');
+        } catch (\Exception $e) {
+            Log::error('Error al obtener PDF como blob', [
+                'filename' => $filename,
+                'error' => $e->getMessage(),
+            ]);
+
+            abort(500, 'Error al descargar el archivo');
+        }
     }
 
     /**
