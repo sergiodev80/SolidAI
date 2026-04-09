@@ -230,11 +230,11 @@ class DocumentConversionService
                 return false;
             }
 
-            // En este punto, $result contiene los resultados del análisis
+            // En este punto, $resultJson contiene los resultados del análisis
             // Ya hemos obtenido el JSON correctamente vía polling
 
             // Extraer texto y crear DOCX
-            $text = $this->extractTextFromDocIntelligenceResult($result);
+            $text = $this->extractTextFromDocIntelligenceResult($resultJson);
 
             // Crear documento DOCX con el texto extraído
             return $this->createDocxFromText($text, $outputPath);
