@@ -429,18 +429,38 @@
     @else
     // Inicializar OnlyOffice si el documento ya está traducido
     document.addEventListener('DOMContentLoaded', function() {
-        @if($onlyofficeConfig)
-        const config = {!! $onlyofficeConfig !!};
+        const config = {
+            "document": {
+                "fileType": "docx",
+                "key": "{{ md5($documentoV1Url . time()) }}",
+                "title": "Documento Traducción",
+                "url": "{{ $documentoV1Url }}"
+            },
+            "documentType": "text",
+            "editorConfig": {
+                "mode": "edit",
+                "user": {
+                    "id": "{{ auth()->id() }}",
+                    "name": "{{ auth()->user()->name ?? 'Usuario' }}"
+                }
+            },
+            "height": "100%",
+            "width": "100%"
+        };
+
+        console.log('Inicializando OnlyOffice con:', config);
 
         if (typeof DocsAPI !== 'undefined') {
-            new DocsAPI.DocEditor('onlyoffice-container', config);
+            try {
+                new DocsAPI.DocEditor('onlyoffice-container', config);
+            } catch (error) {
+                console.error('Error inicializando OnlyOffice:', error);
+                document.getElementById('onlyoffice-container').innerHTML = '<p style="color: #ef4444;">Error al inicializar OnlyOffice: ' + error.message + '</p>';
+            }
         } else {
-            console.error('OnlyOffice API no cargó correctamente');
-            document.getElementById('onlyoffice-container').innerHTML = '<p style="color: #ef4444;">Error al cargar OnlyOffice</p>';
+            console.error('OnlyOffice API (DocsAPI) no está disponible');
+            document.getElementById('onlyoffice-container').innerHTML = '<p style="color: #ef4444;">OnlyOffice API no cargó. Verifica la URL: {{ config("services.onlyoffice.url") }}</p>';
         }
-        @else
-        document.getElementById('onlyoffice-container').innerHTML = '<p style="color: #ef4444;">OnlyOffice no está configurado</p>';
-        @endif
     });
     @endif
 </script>
