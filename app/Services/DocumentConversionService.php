@@ -86,11 +86,11 @@ class DocumentConversionService
     {
         try {
             // Verificar si pdf2docx está instalado
-            $process = Process::run(['which', 'pdf2docx'], timeout: 5);
+            $process = Process::timeout(5)->run(['which', 'pdf2docx']);
             if (!$process->successful()) {
                 // Intentar instalar
                 Log::info("Instalando pdf2docx...");
-                Process::run(['pip', 'install', 'pdf2docx'], timeout: 120);
+                Process::timeout(120)->run(['pip', 'install', 'pdf2docx']);
             }
 
             // Convertir PDF a DOCX
@@ -101,7 +101,7 @@ class DocumentConversionService
                 $outputPath,
             ];
 
-            $process = Process::run($command, timeout: 60);
+            $process = Process::timeout(60)->run($command);
 
             if ($process->successful() && file_exists($outputPath)) {
                 Log::info("PDF convertido exitosamente con pdf2docx", [
@@ -371,13 +371,13 @@ class DocumentConversionService
         try {
             $outputDir = dirname($outputPath);
 
-            $process = Process::run([
+            $process = Process::timeout(60)->run([
                 'libreoffice',
                 '--headless',
                 '--convert-to', 'docx',
                 '--outdir', $outputDir,
                 $inputPath,
-            ], timeout: 60);
+            ]);
 
             if (!$process->successful()) {
                 Log::error("LibreOffice conversion failed", [
