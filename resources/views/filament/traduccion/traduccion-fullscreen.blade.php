@@ -239,15 +239,15 @@
                     <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 1.5rem;">
                         <div style="text-align: center;">
                             <p style="margin: 0; color: #6b7280; font-size: 0.875rem; margin-bottom: 0.5rem;">
-                                Este documento aún no ha sido traducido
+                                Este documento aún no ha sido extraído
                             </p>
-                            <button id="btn-traducir-ia" type="button" style="padding: 0.75rem 1.5rem; background: #f59e0b; color: white; border: none; border-radius: 0.375rem; font-weight: 600; cursor: pointer; font-size: 0.875rem;">
-                                🤖 Traducir con IA
+                            <button id="btn-extraer-documento" type="button" style="padding: 0.75rem 1.5rem; background: #10b981; color: white; border: none; border-radius: 0.375rem; font-weight: 600; cursor: pointer; font-size: 0.875rem;">
+                                📄 Extraer documento
                             </button>
                         </div>
-                        <div id="traduccion-progress" style="display: none; text-align: center;">
+                        <div id="extraccion-progress" style="display: none; text-align: center;">
                             <p style="margin: 0; color: #6b7280; font-size: 0.875rem;">
-                                Traduciendo documento... Por favor espere
+                                Extrayendo documento... Por favor espere
                             </p>
                             <div style="margin-top: 1rem; width: 200px; height: 4px; background: #e5e7eb; border-radius: 2px; overflow: hidden;">
                                 <div style="height: 100%; background: #3b82f6; animation: progress 2s infinite; width: 30%;"></div>
@@ -389,24 +389,21 @@
 {{-- Script para Traducción AI y OnlyOffice --}}
 <script>
     @if(!$documentoTraducido)
-    // Botón para traducir con IA
-    document.getElementById('btn-traducir-ia')?.addEventListener('click', async function() {
+    // Botón para extraer documento (sin traducción)
+    document.getElementById('btn-extraer-documento')?.addEventListener('click', async function() {
         const btn = this;
-        const progress = document.getElementById('traduccion-progress');
+        const progress = document.getElementById('extraccion-progress');
 
         btn.style.display = 'none';
         progress.style.display = 'block';
 
         try {
-            const response = await fetch('/admin/traduccion/traducir-ai/{{ $asignacion->id }}', {
+            const response = await fetch('/admin/traduccion/extraer-documento/{{ $asignacion->id }}', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
                 },
-                body: JSON.stringify({
-                    targetLanguage: '{{ $targetLanguage }}',
-                }),
             });
 
             const data = await response.json();
@@ -420,8 +417,8 @@
                 progress.style.display = 'none';
             }
         } catch (error) {
-            console.error('Error traduciendo:', error);
-            alert('Error al traducir: ' + error.message);
+            console.error('Error extrayendo:', error);
+            alert('Error al extraer documento: ' + error.message);
             btn.style.display = 'block';
             progress.style.display = 'none';
         }

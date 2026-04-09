@@ -16,6 +16,73 @@ class TraduccionAiController extends Controller
     ) {}
 
     /**
+     * Extrae documento sin traducir
+     * POST /admin/traduccion/extraer-documento/{id_asignacion}
+     */
+    public function extraerDocumento(int $id_asignacion): JsonResponse
+    {
+        try {
+            // Validar acceso
+            if (!$this->permissionService->canAccessAsignacion($id_asignacion)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No tienes permiso para acceder a esta asignación',
+                ], 403);
+            }
+
+            // Obtener asignación
+            $asignacion = PresupAdjAsignacion::findOrFail($id_asignacion);
+
+            // Extraer documento sin traducir (usar 'es' como idioma dummy)
+            $rutaDocumentoAi = $this->traduccionAiService->extraerDocumentoSinTraducir(
+                $asignacion
+            );
+
+            if (!$rutaDocumentoAi) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error al extraer documento',
+                ], 500);
+            }
+
+            // Crear copia para la asignación
+            $rutaV1 = $this->traduccionAiService->crearCopiaParaAsignacion(
+                $asignacion,
+                $rutaDocumentoAi
+            );
+
+            if (!$rutaV1) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error al crear copia para asignación',
+                ], 500);
+            }
+
+            Log::info("Documento extraído exitosamente", [
+                'id_asignacion' => $id_asignacion,
+                'documento_ai' => $rutaDocumentoAi,
+                'documento_v1' => $rutaV1,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Documento extraído exitosamente',
+                'documentoV1' => $rutaV1,
+            ]);
+        } catch (\Exception $e) {
+            Log::error("Error al extraer documento", [
+                'id_asignacion' => $id_asignacion,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error interno: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * Inicia la traducción AI del documento
      * POST /admin/traduccion/traducir-ai/{id_asignacion}
      */

@@ -134,6 +134,91 @@ class TraduccionAiService
     }
 
     /**
+     * Extrae documento sin traducir (solo convierte PDF a DOCX)
+     *
+     * @param PresupAdjAsignacion $asignacion
+     * @return string|null Ruta del documento extraído o null si falla
+     */
+    public function extraerDocumentoSinTraducir(PresupAdjAsignacion $asignacion): ?string
+    {
+        try {
+            $adjunto = $asignacion->adjunto;
+            $presupuesto = $adjunto->presupuesto;
+
+            if (!$presupuesto) {
+                return null;
+            }
+
+            $idPresupuesto = $presupuesto->id_pres;
+            $idDocumento = $adjunto->id_adjun;
+
+            // Directorio para documento AI
+            $directorioAi = "archivos/traduccion-ai/{$idPresupuesto}/{$idDocumento}";
+            $rutaAi = public_path($directorioAi);
+
+            // Verificar si ya existe documento extraído
+            if (is_dir($rutaAi)) {
+                $archivos = glob("{$rutaAi}/*");
+                foreach ($archivos as $archivo) {
+                    if (is_file($archivo) && preg_match('/documento_ai\.(docx|pdf|png|jpg|jpeg)$/i', $archivo)) {
+                        return "/{$directorioAi}/" . basename($archivo);
+                    }
+                }
+            }
+
+            // Si no existe, crear directorio
+            if (!is_dir($rutaAi)) {
+                mkdir($rutaAi, 0755, true);
+            }
+
+            // 1. Obtener documento original
+            $pdfOriginalPath = $this->pdfService->obtenerPdfOriginal($asignacion);
+            if (!$pdfOriginalPath) {
+                Log::warning("No se pudo obtener documento original", [
+                    'id_asignacion' => $asignacion->id,
+                ]);
+                return null;
+            }
+
+            $rutaOriginal = public_path($pdfOriginalPath);
+
+            // 2. Convertir a DOCX (sin traducción)
+            $rutaDocxTemp = $rutaAi . '/documento_temp.docx';
+            if (!$this->conversionService->convertToDocx($rutaOriginal, $rutaDocxTemp)) {
+                Log::error("No se pudo convertir documento a DOCX", [
+                    'id_asignacion' => $asignacion->id,
+                    'original' => $rutaOriginal,
+                ]);
+                return null;
+            }
+
+            // 3. Guardar como documento_ai.docx (sin traducir)
+            $rutaAiDocx = $rutaAi . '/documento_ai.docx';
+            if (!rename($rutaDocxTemp, $rutaAiDocx)) {
+                Log::error("No se pudo mover documento extraído", [
+                    'from' => $rutaDocxTemp,
+                    'to' => $rutaAiDocx,
+                ]);
+                @unlink($rutaDocxTemp);
+                return null;
+            }
+
+            Log::info("Documento extraído exitosamente (sin traducir)", [
+                'id_asignacion' => $asignacion->id,
+                'ruta_ai' => $rutaAiDocx,
+            ]);
+
+            return "/{$directorioAi}/documento_ai.docx";
+        } catch (\Exception $e) {
+            Log::error("Error en extracción de documento", [
+                'id_asignacion' => $asignacion->id,
+                'error' => $e->getMessage(),
+            ]);
+            return null;
+        }
+    }
+
+    /**
      * Crea una copia del documento AI para la asignación del traductor
      *
      * @param PresupAdjAsignacion $asignacion
