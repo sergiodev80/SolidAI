@@ -329,13 +329,14 @@
                         9 => 'Ruso',
                         10 => 'Árabe',
                     ];
+                    $langOriginalName = $langNames[$asignacion->id_idiom_original] ?? 'Desconocido';
+                    $langTraducirName = $langNames[$asignacion->id_idiom] ?? 'Desconocido';
                 @endphp
 
-                <div style="text-align: center;">
-                    <button id="btn-editar-idiomas" type="button" style="width: 100%; padding: 0.5rem 1rem; background: #3b82f6; color: white; border: none; border-radius: 0.375rem; font-weight: 600; cursor: pointer; font-size: 0.875rem;">
-                        ✏️ Editar Idiomas
-                    </button>
-                </div>
+                <button id="btn-editar-idiomas" type="button" style="width: 100%; padding: 0.5rem 1rem; background: white; color: #374151; border: 1px solid #e5e7eb; border-radius: 0.375rem; font-weight: 500; cursor: pointer; font-size: 0.875rem; text-align: center; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
+                    <span style="flex: 1;">{{ $langOriginalName }} → {{ $langTraducirName }}</span>
+                    <span style="font-size: 1rem;">✏️</span>
+                </button>
 
                 <hr class="cambios-divider">
                 <p style="text-align: center; padding: 2rem 0;">
