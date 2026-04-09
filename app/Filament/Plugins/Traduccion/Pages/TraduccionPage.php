@@ -23,6 +23,7 @@ class TraduccionPage extends Page
     public ?string $pdfOriginalUrl = null;
     public ?string $documentoV1Url = null;
     public bool $documentoTraducido = false;
+    public bool $documentoEstaTraducido = false; // true si es documento_{idioma}_V1.docx
     public string $targetLanguage = 'es';
 
     protected function getViewData(): array
@@ -34,6 +35,7 @@ class TraduccionPage extends Page
             'pdfOriginalUrl' => $this->pdfOriginalUrl,
             'documentoV1Url' => $this->documentoV1Url,
             'documentoTraducido' => $this->documentoTraducido,
+            'documentoEstaTraducido' => $this->documentoEstaTraducido,
             'targetLanguage' => $this->targetLanguage,
             'latestVersion' => $this->latestVersion,
         ]);
@@ -105,6 +107,7 @@ class TraduccionPage extends Page
                         $this->documentoV1Url = config('app.url') . "archivos/traducciones/{$presupuesto->id_pres}/{$this->asignacion->id}/documento_{$this->targetLanguage}_V1.docx";
                         $this->latestVersion = 1;
                         $this->documentoTraducido = true;
+                        $this->documentoEstaTraducido = true; // Marca que está traducido
                     }
                 }
 
@@ -113,6 +116,7 @@ class TraduccionPage extends Page
                     $this->documentoV1Url = config('app.url') . "archivos/traducciones/{$presupuesto->id_pres}/{$this->asignacion->id}/documento_V1.docx";
                     $this->latestVersion = 1;
                     $this->documentoTraducido = true;
+                    $this->documentoEstaTraducido = false; // Sin traducir
                 }
             }
         }

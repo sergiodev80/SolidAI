@@ -274,8 +274,8 @@
                             </div>
                         </div>
                     </div>
-                @elseif($documentoTraducido && str_contains($documentoV1Url ?? '', 'documento_V1.docx') && !str_contains($documentoV1Url ?? '', '_V1.docx'))
-                    {{-- Documento extraído pero sin traducir (documento_V1.docx sin sufijo de idioma) --}}
+                @elseif($documentoTraducido && !$documentoEstaTraducido)
+                    {{-- Documento extraído pero sin traducir --}}
                     <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 1.5rem;">
                         <div style="text-align: center;">
                             <p style="margin: 0; color: #6b7280; font-size: 0.875rem; margin-bottom: 0.5rem;">
