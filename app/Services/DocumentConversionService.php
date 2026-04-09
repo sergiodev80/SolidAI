@@ -277,11 +277,17 @@ class DocumentConversionService
                 $text = $result['analyzeResult']['content'];
             } elseif (isset($result['analyzeResult']['paragraphs'])) {
                 foreach ($result['analyzeResult']['paragraphs'] as $paragraph) {
-                    $text .= $paragraph['content'] . "\n";
+                    if (isset($paragraph['content'])) {
+                        $text .= $paragraph['content'] . "\n";
+                    }
                 }
             }
 
-            return $text;
+            // Limpiar caracteres UTF-8 malformados
+            $text = mb_convert_encoding($text, 'UTF-8', 'UTF-8');
+            $text = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $text);
+
+            return trim($text);
         } catch (\Exception $e) {
             Log::warning("Error extrayendo texto de Doc Intelligence", [
                 'error' => $e->getMessage(),
