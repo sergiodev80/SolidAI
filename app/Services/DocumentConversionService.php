@@ -170,18 +170,12 @@ class DocumentConversionService
             $responseBody = mb_convert_encoding($responseBody, 'UTF-8', 'UTF-8');
             $responseBody = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $responseBody);
 
-            try {
-                $result = json_decode($responseBody, true);
-                if ($result === null && json_last_error() !== JSON_ERROR_NONE) {
-                    Log::error("JSON parse error from Azure", [
-                        'error' => json_last_error_msg(),
-                        'body_sample' => substr($responseBody, 0, 500),
-                    ]);
-                    return false;
-                }
-            } catch (\Exception $e) {
-                Log::error("JSON parsing exception", [
-                    'error' => $e->getMessage(),
+            $result = json_decode($responseBody, true);
+            if ($result === null && json_last_error() !== JSON_ERROR_NONE) {
+                Log::error("JSON parse error from Azure response", [
+                    'input' => $inputPath,
+                    'error' => json_last_error_msg(),
+                    'body_sample' => substr($responseBody, 0, 500),
                 ]);
                 return false;
             }
@@ -195,6 +189,7 @@ class DocumentConversionService
             Log::error("Azure Doc Intelligence conversion error", [
                 'input' => $inputPath,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
             return false;
         }
