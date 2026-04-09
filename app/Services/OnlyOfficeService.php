@@ -47,6 +47,15 @@ class OnlyOfficeService
         string $mode = 'edit'
     ): array
     {
+        try {
+            $callbackUrl = route('onlyoffice.callback');
+        } catch (\Exception $e) {
+            $callbackUrl = '/api/onlyoffice/callback';
+            Log::warning("No se pudo obtener ruta de callback, usando default", [
+                'error' => $e->getMessage(),
+            ]);
+        }
+
         $config = [
             'document' => [
                 'fileType' => 'docx',
@@ -57,7 +66,7 @@ class OnlyOfficeService
             'documentType' => 'text',
             'editorConfig' => [
                 'mode' => $mode,
-                'callbackUrl' => route('onlyoffice.callback'),
+                'callbackUrl' => $callbackUrl,
                 'user' => [
                     'id' => $userId ?? auth()->id() ?? 'anonymous',
                     'name' => $userName ?? auth()->user()->name ?? 'Usuario',
