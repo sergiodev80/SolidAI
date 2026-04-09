@@ -172,4 +172,62 @@ class TraduccionAiController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Guarda los idiomas seleccionados en la asignación
+     * POST /admin/traduccion/guardar-idiomas/{id_asignacion}
+     */
+    public function guardarIdiomas(int $id_asignacion): JsonResponse
+    {
+        try {
+            // Validar acceso
+            if (!$this->permissionService->canAccessAsignacion($id_asignacion)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No tienes permiso para acceder a esta asignación',
+                ], 403);
+            }
+
+            // Obtener asignación
+            $asignacion = PresupAdjAsignacion::findOrFail($id_asignacion);
+
+            // Obtener idiomas del request
+            $idIdiomOriginal = request('id_idiom_original');
+            $idIdiom = request('id_idiom');
+
+            if (!$idIdiomOriginal || !$idIdiom) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ambos idiomas son requeridos',
+                ], 422);
+            }
+
+            // Actualizar asignación
+            $asignacion->update([
+                'id_idiom_original' => $idIdiomOriginal,
+                'id_idiom' => $idIdiom,
+            ]);
+
+            Log::info("Idiomas actualizados en asignación", [
+                'id_asignacion' => $id_asignacion,
+                'id_idiom_original' => $idIdiomOriginal,
+                'id_idiom' => $idIdiom,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Idiomas guardados exitosamente',
+            ]);
+        } catch (\Exception $e) {
+            Log::error("Error guardando idiomas", [
+                'id_asignacion' => $id_asignacion,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error interno: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
 }

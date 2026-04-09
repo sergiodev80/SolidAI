@@ -349,6 +349,10 @@
                     </select>
                 </div>
 
+                <button id="btn-guardar-idiomas" type="button" style="width: 100%; padding: 0.5rem; background: #10b981; color: white; border: none; border-radius: 0.375rem; font-weight: 600; cursor: pointer; font-size: 0.875rem; margin-bottom: 1rem;">
+                    ✓ Guardar Idiomas
+                </button>
+
                 <hr class="cambios-divider">
                 <p style="text-align: center; padding: 2rem 0;">
                     Sin cambios aún
@@ -548,11 +552,62 @@
         }
     });
 
-    // Evento para actualizar el idioma cuando cambia el selector
-    document.getElementById('select-idioma-traducir')?.addEventListener('change', function() {
-        const idiomId = this.value;
-        const idiomName = this.options[this.selectedIndex].text;
-        console.log('Idioma a traducir cambiado a: ' + idiomName + ' (' + idiomId + ')');
+    // Botón para guardar los idiomas seleccionados
+    document.getElementById('btn-guardar-idiomas')?.addEventListener('click', async function() {
+        const btn = this;
+        const idiomaOriginalSelect = document.getElementById('select-idioma-original');
+        const idiomaTraducirSelect = document.getElementById('select-idioma-traducir');
+
+        const idiomaOriginal = idiomaOriginalSelect ? idiomaOriginalSelect.value : null;
+        const idiomaTraducir = idiomaTraducirSelect ? idiomaTraducirSelect.value : null;
+
+        if (!idiomaOriginal || !idiomaTraducir) {
+            alert('Por favor selecciona ambos idiomas');
+            return;
+        }
+
+        btn.disabled = true;
+        btn.style.opacity = '0.6';
+        const originalText = btn.textContent;
+        btn.textContent = '⏳ Guardando...';
+
+        try {
+            const response = await fetch('/admin/traduccion/guardar-idiomas/{{ $asignacion->id }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                },
+                body: JSON.stringify({
+                    id_idiom_original: idiomaOriginal,
+                    id_idiom: idiomaTraducir
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                btn.textContent = '✓ Guardado';
+                btn.style.background = '#059669';
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.style.opacity = '1';
+                    btn.textContent = originalText;
+                    btn.style.background = '#10b981';
+                }, 2000);
+            } else {
+                alert('Error: ' + (data.message || 'Error desconocido'));
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                btn.textContent = originalText;
+            }
+        } catch (error) {
+            console.error('Error guardando idiomas:', error);
+            alert('Error al guardar: ' + error.message);
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            btn.textContent = originalText;
+        }
     });
 
     // Inicializar OnlyOffice si el documento ya está traducido

@@ -30,6 +30,10 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::post('/admin/traduccion/traducir-ai/{id_asignacion}', [\App\Http\Controllers\TraduccionAiController::class, 'traducir'])
         ->name('traduccion.traducir-ai');
 
+    // Guardar idiomas de asignación
+    Route::post('/admin/traduccion/guardar-idiomas/{id_asignacion}', [\App\Http\Controllers\TraduccionAiController::class, 'guardarIdiomas'])
+        ->name('traduccion.guardar-idiomas');
+
     // OnlyOffice Callbacks
     Route::post('/api/onlyoffice/callback', [\App\Http\Controllers\OnlyOfficeCallbackController::class, 'callback'])
         ->name('onlyoffice.callback');
