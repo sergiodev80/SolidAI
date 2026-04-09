@@ -78,14 +78,31 @@ The Traducción plugin is a complete Laravel 13 + Filament v5 implementation tha
 
 ## Recent Fixes Applied
 
+### UTF-8 JSON Parsing Error - CRITICAL FIX (Committed: 1265dd7)
+**Issue**: Azure Doc Intelligence response contained malformed UTF-8, causing `json_decode()` to fail
+**Previous attempt**: Applied sanitization AFTER JSON parsing (too late)
+**Correct fix**: Sanitize response body BEFORE JSON parsing
+- Clean response with `mb_convert_encoding()` and `preg_replace()`
+- Parse JSON with proper error handling
+- Fallback for images if parsing fails
+- Detailed error logging for debugging
+
+This resolves: `"json_encode error: Malformed UTF-8 characters, possibly incorrectly encoded"`
+
 ### UTF-8 Character Encoding (Committed: e51644b)
-**Issue**: Azure Doc Intelligence returns malformed UTF-8 sequences
+**Issue**: Extracted text from Azure contained malformed UTF-8
 **Fix**: Added character sanitization in `extractTextFromDocIntelligenceResult()`:
 - `mb_convert_encoding($text, 'UTF-8', 'UTF-8')` — Normalize encoding
 - `preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $text)` — Remove control characters
 - `trim($text)` — Clean whitespace
 
-This resolves: `"Malformed UTF-8 characters, possibly incorrectly encoded"` error
+### pdf2docx Fallback Improvement (Committed: c00400b)
+**Issue**: pdf2docx installation attempt failed in web context, blocking Azure fallback
+**Fix**: 
+- Removed automatic installation (doesn't work in web process)
+- Check if pdf2docx exists
+- Fail fast to immediately use Azure Doc Intelligence
+- Better logging for debugging
 
 ### Process Timeout Syntax (Committed: 1985476)
 **Issue**: Laravel 13 uses different Process API syntax
@@ -245,6 +262,10 @@ The plugin expects these columns (all implemented):
 ## Recent Commits
 
 ```
+c00400b - fix: improve pdf2docx fallback behavior
+1265dd7 - fix: handle UTF-8 malformed characters BEFORE JSON parsing from Azure
+49b742b - docs: add quick start guide for Traduccion plugin
+49527b5 - docs: add comprehensive Traduccion plugin status report
 ccc6e4e - chore: remove redundant migrations for id_idiom columns
 e51644b - fix: UTF-8 character encoding in Azure Doc Intelligence response parsing
 1985476 - fix: usar sintaxis correcta de timeout en Process para Laravel 13
@@ -252,10 +273,6 @@ dec9ea7 - fix: manejar error en callbackUrl si route() falla
 3e9051b - fix: simplificar inicialización de OnlyOffice y remover JSON inválido
 943f2c6 - refactor: mejorar conversión de documentos con pdf2docx y Doc Intelligence
 49f9109 - feat: implementar servicio de versioning y mejorar callback
-9660d24 - feat: implementar OnlyOffice callback controller
-f54bdec - feat: integrar servicio de OnlyOffice con JWT
-4ae91d2 - config: añadir configuración de Azure Translator y OnlyOffice
-bf5eeca - feat: integrar traducción AI y OnlyOffice en la interfaz
 ```
 
 ---
