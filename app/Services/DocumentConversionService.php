@@ -384,21 +384,39 @@ class DocumentConversionService
         try {
             $text = '';
 
+            // Debug: Log la estructura del resultado
+            Log::info("Azure Doc Intelligence result structure", [
+                'has_analyzeResult' => isset($result['analyzeResult']),
+                'result_keys' => array_keys($result),
+            ]);
+
             if (isset($result['analyzeResult']['content'])) {
                 $text = $result['analyzeResult']['content'];
+                Log::info("Using analyzeResult.content", ['length' => strlen($text)]);
             } elseif (isset($result['analyzeResult']['paragraphs'])) {
+                Log::info("Using analyzeResult.paragraphs", ['count' => count($result['analyzeResult']['paragraphs'])]);
                 foreach ($result['analyzeResult']['paragraphs'] as $paragraph) {
                     if (isset($paragraph['content'])) {
                         $text .= $paragraph['content'] . "\n";
                     }
                 }
+            } else {
+                Log::warning("No content found in analyzeResult", [
+                    'analyzeResult_keys' => isset($result['analyzeResult']) ? array_keys($result['analyzeResult']) : [],
+                ]);
             }
 
             // Limpiar caracteres UTF-8 malformados
             $text = mb_convert_encoding($text, 'UTF-8', 'UTF-8');
             $text = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $text);
 
-            return trim($text);
+            $finalText = trim($text);
+            Log::info("Text extracted from Azure", [
+                'original_length' => strlen($text),
+                'final_length' => strlen($finalText),
+            ]);
+
+            return $finalText;
         } catch (\Exception $e) {
             Log::warning("Error extrayendo texto de Doc Intelligence", [
                 'error' => $e->getMessage(),
@@ -413,11 +431,25 @@ class DocumentConversionService
     private function createDocxFromText(string $text, string $outputPath): bool
     {
         try {
+            Log::info("Creating DOCX from text", [
+                'text_length' => strlen($text),
+                'output_path' => $outputPath,
+            ]);
+
+            if (empty($text)) {
+                Log::error("Cannot create DOCX: text is empty", [
+                    'output_path' => $outputPath,
+                ]);
+                return false;
+            }
+
             $phpWord = new \PhpOffice\PhpWord\PhpWord();
             $section = $phpWord->addSection();
 
             // Dividir en párrafos
             $paragraphs = explode("\n", $text);
+            Log::info("Processing paragraphs", ['count' => count($paragraphs)]);
+
             foreach ($paragraphs as $para) {
                 if (trim($para) !== '') {
                     $section->addText($para);
@@ -427,10 +459,22 @@ class DocumentConversionService
             $objWriter = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'Word2007');
             $objWriter->save($outputPath);
 
-            return file_exists($outputPath);
+            if (file_exists($outputPath)) {
+                Log::info("DOCX created successfully", [
+                    'path' => $outputPath,
+                    'size' => filesize($outputPath),
+                ]);
+                return true;
+            } else {
+                Log::error("DOCX file not created after save", [
+                    'path' => $outputPath,
+                ]);
+                return false;
+            }
         } catch (\Exception $e) {
             Log::error("Error creando DOCX desde texto", [
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
             return false;
         }
