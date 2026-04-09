@@ -713,10 +713,33 @@
         const btn = this;
         const idiomaOriginal = document.getElementById('modal-idioma-original').value;
         const idiomaTraducir = document.getElementById('modal-idioma-traducir').value;
+        const idiomaTraducirActual = '{{ $asignacion->id_idiom }}';
 
         if (!idiomaOriginal || !idiomaTraducir) {
             alert('Por favor selecciona ambos idiomas');
             return;
+        }
+
+        // Verificar si el idioma a traducir cambió
+        if (idiomaTraducir !== idiomaTraducirActual) {
+            const langNames = {
+                1: 'Español',
+                2: 'Inglés',
+                3: 'Portugués',
+                4: 'Francés',
+                5: 'Alemán',
+                6: 'Italiano',
+                7: 'Japonés',
+                8: 'Chino',
+                9: 'Ruso',
+                10: 'Árabe',
+            };
+            const idiomaAnterior = langNames[idiomaTraducirActual] || 'Desconocido';
+            const confirmacion = confirm(`⚠️ ADVERTENCIA\n\nSi cambias el idioma de traducción a ${langNames[idiomaTraducir]}, se borrarán los documentos traducidos a ${idiomaAnterior}.\n\n¿Estás seguro de que deseas continuar?`);
+
+            if (!confirmacion) {
+                return;
+            }
         }
 
         btn.disabled = true;

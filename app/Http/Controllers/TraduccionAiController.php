@@ -195,6 +195,31 @@ class TraduccionAiController extends Controller
                 ], 422);
             }
 
+            // Detectar si el idioma a traducir cambió
+            $idiomaCambio = $asignacion->id_idiom !== (int)$idIdiom;
+
+            // Si cambió el idioma, borrar documentos traducidos con idioma anterior
+            if ($idiomaCambio && $asignacion->id_idiom) {
+                $presupuesto = $asignacion->adjunto->presupuesto;
+                if ($presupuesto) {
+                    // Obtener código del idioma anterior
+                    $idiomaAnterior = $this->getLanguageCode($asignacion->id_idiom);
+
+                    // Ruta del documento traducido con idioma anterior
+                    $rutaDocumentoTraducido = public_path("archivos/traducciones/{$presupuesto->id_pres}/{$asignacion->id}/documento_{$idiomaAnterior}_V1.docx");
+
+                    // Borrar si existe
+                    if (file_exists($rutaDocumentoTraducido)) {
+                        @unlink($rutaDocumentoTraducido);
+                        Log::info("Documento traducido anterior borrado", [
+                            'id_asignacion' => $id_asignacion,
+                            'idioma_anterior' => $idiomaAnterior,
+                            'ruta' => $rutaDocumentoTraducido,
+                        ]);
+                    }
+                }
+            }
+
             // Actualizar asignación
             $asignacion->update([
                 'id_idiom_original' => $idIdiomOriginal,
@@ -205,6 +230,7 @@ class TraduccionAiController extends Controller
                 'id_asignacion' => $id_asignacion,
                 'id_idiom_original' => $idIdiomOriginal,
                 'id_idiom' => $idIdiom,
+                'cambio_detectado' => $idiomaCambio,
             ]);
 
             return response()->json([
@@ -222,6 +248,26 @@ class TraduccionAiController extends Controller
                 'message' => 'Error interno: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * Mapea ID de idioma a código de Azure Translator
+     */
+    private function getLanguageCode(int $idIdiom): string
+    {
+        return match ($idIdiom) {
+            1 => 'es',      // Español
+            2 => 'en',      // Inglés
+            3 => 'pt',      // Portugués
+            4 => 'fr',      // Francés
+            5 => 'de',      // Alemán
+            6 => 'it',      // Italiano
+            7 => 'ja',      // Japonés
+            8 => 'zh',      // Chino
+            9 => 'ru',      // Ruso
+            10 => 'ar',     // Árabe
+            default => 'es',
+        };
     }
 
     /**
