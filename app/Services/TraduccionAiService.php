@@ -219,6 +219,130 @@ class TraduccionAiService
     }
 
     /**
+     * Traduce un documento ya extraído usando Azure Translator
+     * Asume que documento_ai.docx ya existe en la carpeta AI
+     *
+     * @param PresupAdjAsignacion $asignacion
+     * @param string $targetLanguageCode Código de idioma destino (ej: 'es', 'en')
+     * @return string|null Ruta del documento traducido o null si falla
+     */
+    public function traducirDocumentoExtraido(PresupAdjAsignacion $asignacion, string $targetLanguageCode): ?string
+    {
+        try {
+            $adjunto = $asignacion->adjunto;
+            $presupuesto = $adjunto->presupuesto;
+
+            if (!$presupuesto) {
+                return null;
+            }
+
+            $idPresupuesto = $presupuesto->id_pres;
+            $idDocumento = $adjunto->id_adjun;
+
+            // Directorio para documento AI
+            $directorioAi = "archivos/traduccion-ai/{$idPresupuesto}/{$idDocumento}";
+            $rutaAi = public_path($directorioAi);
+
+            // Verificar que existe documento_ai.docx
+            $rutaDocumentoAi = $rutaAi . '/documento_ai.docx';
+            if (!file_exists($rutaDocumentoAi)) {
+                Log::warning("Documento AI no encontrado para traducir", [
+                    'id_asignacion' => $asignacion->id,
+                    'ruta' => $rutaDocumentoAi,
+                ]);
+                return null;
+            }
+
+            // Traducir con Azure
+            $rutaTraducida = $this->translationService->translateDocument(
+                $rutaDocumentoAi,
+                $targetLanguageCode
+            );
+
+            if (!$rutaTraducida) {
+                Log::warning("No se pudo traducir documento AI con Azure", [
+                    'id_asignacion' => $asignacion->id,
+                    'idioma_destino' => $targetLanguageCode,
+                ]);
+                return null;
+            }
+
+            Log::info("Documento AI traducido exitosamente", [
+                'id_asignacion' => $asignacion->id,
+                'ruta_traducida' => $rutaTraducida,
+                'idioma_destino' => $targetLanguageCode,
+            ]);
+
+            return "/{$directorioAi}/" . basename($rutaTraducida);
+        } catch (\Exception $e) {
+            Log::error("Error traduciendo documento extraído", [
+                'id_asignacion' => $asignacion->id,
+                'error' => $e->getMessage(),
+            ]);
+            return null;
+        }
+    }
+
+    /**
+     * Crea versión V2 del documento (traducido)
+     *
+     * @param PresupAdjAsignacion $asignacion
+     * @param string $rutaDocumentoTraducido Ruta del documento traducido
+     * @return string|null Ruta del documento V2 o null si falla
+     */
+    public function crearVersionV2(PresupAdjAsignacion $asignacion, string $rutaDocumentoTraducido): ?string
+    {
+        try {
+            $presupuesto = $asignacion->adjunto->presupuesto;
+            if (!$presupuesto) {
+                return null;
+            }
+
+            $idPresupuesto = $presupuesto->id_pres;
+            $idAsignacion = $asignacion->id;
+
+            // Directorio para asignación
+            $directorioAsignacion = "archivos/traducciones/{$idPresupuesto}/{$idAsignacion}";
+            $rutaAsignacion = public_path($directorioAsignacion);
+
+            // Crear directorio si no existe
+            if (!is_dir($rutaAsignacion)) {
+                mkdir($rutaAsignacion, 0755, true);
+            }
+
+            // Crear versión V2 (traducida)
+            $rutaV2 = $rutaAsignacion . '/documento_V2.docx';
+            $rutaTraducidaLocal = public_path($rutaDocumentoTraducido);
+
+            if (!file_exists($rutaTraducidaLocal)) {
+                Log::warning("Documento traducido no encontrado: {$rutaTraducidaLocal}");
+                return null;
+            }
+
+            if (!copy($rutaTraducidaLocal, $rutaV2)) {
+                Log::error("No se pudo copiar documento traducido para asignación", [
+                    'from' => $rutaTraducidaLocal,
+                    'to' => $rutaV2,
+                ]);
+                return null;
+            }
+
+            Log::info("Versión V2 traducida creada para asignación", [
+                'id_asignacion' => $asignacion->id,
+                'ruta_v2' => $rutaV2,
+            ]);
+
+            return "/{$directorioAsignacion}/documento_V2.docx";
+        } catch (\Exception $e) {
+            Log::error("Error creando versión V2", [
+                'id_asignacion' => $asignacion->id,
+                'error' => $e->getMessage(),
+            ]);
+            return null;
+        }
+    }
+
+    /**
      * Crea una copia del documento AI para la asignación del traductor
      *
      * @param PresupAdjAsignacion $asignacion

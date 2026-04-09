@@ -85,14 +85,22 @@ class TraduccionPage extends Page
         $pdfRelativeUrl = $pdfService->obtenerPdfOriginal($this->asignacion);
         $this->pdfOriginalUrl = $pdfRelativeUrl ? config('app.url') . ltrim($pdfRelativeUrl, '/') : null;
 
-        // Obtener documento V1 si existe (traducción para esta asignación)
+        // Obtener documento V1 o V2 si existe (traducción para esta asignación)
         $presupuesto = $this->asignacion->adjunto->presupuesto;
         if ($presupuesto) {
-            $dirV1 = public_path("archivos/traducciones/{$presupuesto->id_pres}/{$this->asignacion->id}");
-            if (is_dir($dirV1) && file_exists("{$dirV1}/documento_V1.docx")) {
-                // Usar URL absoluta para que OnlyOffice pueda descargar el documento
-                $this->documentoV1Url = config('app.url') . "archivos/traducciones/{$presupuesto->id_pres}/{$this->asignacion->id}/documento_V1.docx";
-                $this->documentoTraducido = true;
+            $dirVersiones = public_path("archivos/traducciones/{$presupuesto->id_pres}/{$this->asignacion->id}");
+
+            // Detectar versión más reciente (V2 > V1)
+            if (is_dir($dirVersiones)) {
+                if (file_exists("{$dirVersiones}/documento_V2.docx")) {
+                    $this->documentoV1Url = config('app.url') . "archivos/traducciones/{$presupuesto->id_pres}/{$this->asignacion->id}/documento_V2.docx";
+                    $this->latestVersion = 2;
+                    $this->documentoTraducido = true;
+                } elseif (file_exists("{$dirVersiones}/documento_V1.docx")) {
+                    $this->documentoV1Url = config('app.url') . "archivos/traducciones/{$presupuesto->id_pres}/{$this->asignacion->id}/documento_V1.docx";
+                    $this->latestVersion = 1;
+                    $this->documentoTraducido = true;
+                }
             }
         }
 
@@ -100,8 +108,6 @@ class TraduccionPage extends Page
         if ($this->asignacion->id_idiom) {
             $this->targetLanguage = $this->getLanguageCode($this->asignacion->id_idiom);
         }
-
-        // Obtener última versión (será obtenida en la vista)
     }
 
     /**

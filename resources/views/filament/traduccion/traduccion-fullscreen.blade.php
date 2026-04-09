@@ -229,8 +229,17 @@
 
         {{-- Panel Central: Editor OnlyOffice --}}
         <div class="traduccion-panel panel-traduccion">
-            <div class="traduccion-panel-header">
+            <div class="traduccion-panel-header" style="display: flex; align-items: center; justify-content: space-between;">
                 <h2>TRADUCCIÓN (V{{ $latestVersion ?? 1 }})</h2>
+                @if($documentoTraducido && $latestVersion === 1)
+                    <button id="btn-traducir-ia" type="button" style="padding: 0.5rem 1rem; background: #2563eb; color: white; border: none; border-radius: 0.375rem; font-weight: 600; cursor: pointer; font-size: 0.875rem;">
+                        🤖 Traducir con IA
+                    </button>
+                @elseif($documentoTraducido && $latestVersion === 2)
+                    <span style="padding: 0.5rem 1rem; background: #10b981; color: white; border-radius: 0.375rem; font-weight: 600; font-size: 0.875rem;">
+                        ✓ Traducido
+                    </span>
+                @endif
             </div>
             <div class="traduccion-panel-content">
                 @if($documentoTraducido)
@@ -424,6 +433,45 @@
         }
     });
     @else
+    // Botón para traducir con IA
+    document.getElementById('btn-traducir-ia')?.addEventListener('click', async function() {
+        const btn = this;
+        btn.disabled = true;
+        btn.style.opacity = '0.6';
+        btn.textContent = '⏳ Traduciendo...';
+
+        try {
+            const response = await fetch('/admin/traduccion/traducir-ai/{{ $asignacion->id }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                },
+                body: JSON.stringify({
+                    targetLanguage: '{{ $targetLanguage ?? "es" }}'
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                // Recargar página para mostrar documento traducido
+                window.location.reload();
+            } else {
+                alert('Error: ' + (data.message || 'Error desconocido'));
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                btn.textContent = '🤖 Traducir con IA';
+            }
+        } catch (error) {
+            console.error('Error traduciendo:', error);
+            alert('Error al traducir documento: ' + error.message);
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            btn.textContent = '🤖 Traducir con IA';
+        }
+    });
+
     // Inicializar OnlyOffice si el documento ya está traducido
     document.addEventListener('DOMContentLoaded', function() {
         const config = {

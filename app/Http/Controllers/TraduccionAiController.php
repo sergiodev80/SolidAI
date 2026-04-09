@@ -103,45 +103,46 @@ class TraduccionAiController extends Controller
             // Obtener idioma destino (debe venir en request)
             $targetLanguage = request('targetLanguage', 'es');
 
-            // Traducir con IA
-            $rutaDocumentoAi = $this->traduccionAiService->obtenerDocumentoAi(
+            // Traducir documento AI ya extraído con Azure Translator
+            $rutaDocumentoTraducido = $this->traduccionAiService->traducirDocumentoExtraido(
                 $asignacion,
                 $targetLanguage
             );
 
-            if (!$rutaDocumentoAi) {
+            if (!$rutaDocumentoTraducido) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Error al traducir documento con IA',
+                    'message' => 'Error al traducir documento con Azure',
                 ], 500);
             }
 
-            // Crear copia para la asignación
-            $rutaV1 = $this->traduccionAiService->crearCopiaParaAsignacion(
+            // Crear versión V2 (traducida) para la asignación
+            $rutaV2 = $this->traduccionAiService->crearVersionV2(
                 $asignacion,
-                $rutaDocumentoAi
+                $rutaDocumentoTraducido
             );
 
-            if (!$rutaV1) {
+            if (!$rutaV2) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Error al crear copia para asignación',
+                    'message' => 'Error al crear versión V2 traducida',
                 ], 500);
             }
 
-            Log::info("Traducción AI completada", [
+            Log::info("Traducción Azure completada", [
                 'id_asignacion' => $id_asignacion,
-                'documento_ai' => $rutaDocumentoAi,
-                'documento_v1' => $rutaV1,
+                'documento_traducido' => $rutaDocumentoTraducido,
+                'version_v2' => $rutaV2,
+                'idioma_destino' => $targetLanguage,
             ]);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Documento traducido exitosamente',
-                'documentoV1' => $rutaV1,
+                'message' => 'Documento traducido exitosamente con Azure',
+                'documentoV2' => $rutaV2,
             ]);
         } catch (\Exception $e) {
-            Log::error("Error en traducción AI", [
+            Log::error("Error en traducción con Azure", [
                 'id_asignacion' => $id_asignacion,
                 'error' => $e->getMessage(),
             ]);
