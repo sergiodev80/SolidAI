@@ -106,6 +106,9 @@ class AzureDocumentTranslationService
                 'idioma_destino' => $targetLanguage,
             ]);
 
+            // Establecer el idioma en el documento traducido
+            $this->setDocumentLanguage($translatedPath, $targetLanguage);
+
             return $translatedPath;
         } catch (\Exception $e) {
             Log::error("Error en traducción de documento", [
@@ -113,6 +116,100 @@ class AzureDocumentTranslationService
                 'error' => $e->getMessage(),
             ]);
             return null;
+        }
+    }
+
+    /**
+     * Establece el idioma en un documento DOCX
+     * Mapea códigos de idioma de Azure a códigos de región de Office
+     */
+    private function setDocumentLanguage(string $docxPath, string $languageCode): bool
+    {
+        try {
+            if (!file_exists($docxPath) || strtolower(pathinfo($docxPath, PATHINFO_EXTENSION)) !== 'docx') {
+                return false;
+            }
+
+            // Mapeo de códigos de Azure a códigos de región de Office
+            $languageMap = [
+                'es' => 'es-ES',  // Español
+                'en' => 'en-US',  // Inglés
+                'pt' => 'pt-BR',  // Portugués
+                'fr' => 'fr-FR',  // Francés
+                'de' => 'de-DE',  // Alemán
+                'it' => 'it-IT',  // Italiano
+                'ja' => 'ja-JP',  // Japonés
+                'zh' => 'zh-CN',  // Chino
+                'ru' => 'ru-RU',  // Ruso
+                'ar' => 'ar-SA',  // Árabe
+            ];
+
+            $languageTag = $languageMap[$languageCode] ?? 'es-ES';
+
+            // Abrir DOCX como ZIP
+            $zip = new \ZipArchive();
+            if ($zip->open($docxPath) !== true) {
+                Log::warning("No se pudo abrir DOCX para establecer idioma", [
+                    'path' => $docxPath,
+                ]);
+                return false;
+            }
+
+            // Leer document.xml
+            $documentXml = $zip->getFromName('word/document.xml');
+            if (!$documentXml) {
+                $zip->close();
+                return false;
+            }
+
+            // Parsear XML
+            $dom = new \DOMDocument();
+            $dom->loadXML($documentXml);
+
+            // Encontrar o crear el elemento rPr (run properties) en el cuerpo del documento
+            $xpath = new \DOMXPath($dom);
+            $xpath->registerNamespace('w', 'http://schemas.openxmlformats.org/wordprocessingml/2006/main');
+
+            // Establecer idioma en todos los párrafos
+            $paragraphs = $xpath->query('//w:p');
+            foreach ($paragraphs as $paragraph) {
+                $pPr = $xpath->query('w:pPr', $paragraph)->item(0);
+                if (!$pPr) {
+                    $pPr = $dom->createElement('w:pPr');
+                    $paragraph->insertBefore($pPr, $paragraph->firstChild);
+                }
+
+                // Establecer idioma en propiedades de párrafo
+                $rPr = $xpath->query('w:rPr', $pPr)->item(0);
+                if (!$rPr) {
+                    $rPr = $dom->createElement('w:rPr');
+                    $pPr->appendChild($rPr);
+                }
+
+                $lang = $xpath->query('w:lang', $rPr)->item(0);
+                if (!$lang) {
+                    $lang = $dom->createElement('w:lang');
+                    $rPr->appendChild($lang);
+                }
+                $lang->setAttribute('w:val', $languageTag);
+            }
+
+            // Guardar documento.xml actualizado
+            $zip->addFromString('word/document.xml', $dom->saveXML());
+            $zip->close();
+
+            Log::info("Idioma establecido en documento DOCX", [
+                'path' => $docxPath,
+                'language' => $languageTag,
+            ]);
+
+            return true;
+        } catch (\Exception $e) {
+            Log::warning("Error estableciendo idioma en DOCX", [
+                'path' => $docxPath,
+                'error' => $e->getMessage(),
+            ]);
+            return false;
         }
     }
 
