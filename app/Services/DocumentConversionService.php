@@ -162,8 +162,28 @@ class DocumentConversionService
                 return false;
             }
 
-            // Obtener resultados
-            $result = $response->json();
+            // Obtener resultados - manejar UTF-8 malformado
+            $responseBody = $response->body();
+
+            // Limpiar caracteres UTF-8 malformados antes de parsear JSON
+            $responseBody = mb_convert_encoding($responseBody, 'UTF-8', 'UTF-8');
+            $responseBody = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $responseBody);
+
+            try {
+                $result = json_decode($responseBody, true);
+                if ($result === null && json_last_error() !== JSON_ERROR_NONE) {
+                    Log::error("JSON parse error from Azure", [
+                        'error' => json_last_error_msg(),
+                        'body_sample' => substr($responseBody, 0, 500),
+                    ]);
+                    return false;
+                }
+            } catch (\Exception $e) {
+                Log::error("JSON parsing exception", [
+                    'error' => $e->getMessage(),
+                ]);
+                return false;
+            }
 
             // Extraer texto y crear DOCX
             $text = $this->extractTextFromDocIntelligenceResult($result);
@@ -215,8 +235,28 @@ class DocumentConversionService
                 return $this->convertImageToDocxFallback($inputPath, $outputPath);
             }
 
-            // Extraer texto
-            $result = $response->json();
+            // Extraer texto - manejar UTF-8 malformado
+            $responseBody = $response->body();
+
+            // Limpiar caracteres UTF-8 malformados antes de parsear JSON
+            $responseBody = mb_convert_encoding($responseBody, 'UTF-8', 'UTF-8');
+            $responseBody = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $responseBody);
+
+            try {
+                $result = json_decode($responseBody, true);
+                if ($result === null && json_last_error() !== JSON_ERROR_NONE) {
+                    Log::warning("JSON parse error from Azure in image conversion, using fallback", [
+                        'error' => json_last_error_msg(),
+                    ]);
+                    return $this->convertImageToDocxFallback($inputPath, $outputPath);
+                }
+            } catch (\Exception $e) {
+                Log::warning("JSON parsing exception in image conversion, using fallback", [
+                    'error' => $e->getMessage(),
+                ]);
+                return $this->convertImageToDocxFallback($inputPath, $outputPath);
+            }
+
             $text = $this->extractTextFromDocIntelligenceResult($result);
 
             // Crear DOCX con texto e imagen
