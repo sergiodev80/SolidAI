@@ -82,7 +82,7 @@ class TraduccionAiService
                 return null;
             }
 
-            // 3. Traducir con Azure
+            // 3. Traducir con Azure (con fallback si falla)
             $rutaAiDocx = $rutaAi . '/documento_ai.docx';
             $rutaTrad = $this->translationService->translateDocument(
                 $rutaDocxTemp,
@@ -90,21 +90,29 @@ class TraduccionAiService
             );
 
             if (!$rutaTrad) {
-                Log::error("No se pudo traducir documento con Azure", [
+                Log::warning("No se pudo traducir documento con Azure, usando DOCX sin traducir como fallback", [
                     'id_asignacion' => $asignacion->id,
                 ]);
-                @unlink($rutaDocxTemp);
-                return null;
-            }
 
-            // Mover archivo traducido al lugar correcto
-            if (!rename($rutaTrad, $rutaAiDocx)) {
-                Log::error("No se pudo mover documento traducido", [
-                    'from' => $rutaTrad,
-                    'to' => $rutaAiDocx,
-                ]);
-                @unlink($rutaDocxTemp);
-                return null;
+                // Fallback: usar el DOCX extraído sin traducir
+                if (!copy($rutaDocxTemp, $rutaAiDocx)) {
+                    Log::error("No se pudo copiar DOCX sin traducir", [
+                        'from' => $rutaDocxTemp,
+                        'to' => $rutaAiDocx,
+                    ]);
+                    @unlink($rutaDocxTemp);
+                    return null;
+                }
+            } else {
+                // Traducción exitosa: mover archivo traducido al lugar correcto
+                if (!rename($rutaTrad, $rutaAiDocx)) {
+                    Log::error("No se pudo mover documento traducido", [
+                        'from' => $rutaTrad,
+                        'to' => $rutaAiDocx,
+                    ]);
+                    @unlink($rutaDocxTemp);
+                    return null;
+                }
             }
 
             // Limpiar archivo temporal
