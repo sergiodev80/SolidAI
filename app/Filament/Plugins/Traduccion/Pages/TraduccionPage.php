@@ -98,21 +98,21 @@ class TraduccionPage extends Page
             $dirVersiones = public_path("archivos/traducciones/{$presupuesto->id_pres}/{$this->asignacion->id}");
 
             if (is_dir($dirVersiones)) {
-                // Buscar documento_V1.docx (extracción sin traducir)
-                if (file_exists("{$dirVersiones}/documento_V1.docx")) {
+                // Buscar primero documento_{idioma}_V1.docx (traducción con idioma actual)
+                if ($this->targetLanguage) {
+                    $rutaTraducida = "{$dirVersiones}/documento_{$this->targetLanguage}_V1.docx";
+                    if (file_exists($rutaTraducida)) {
+                        $this->documentoV1Url = config('app.url') . "archivos/traducciones/{$presupuesto->id_pres}/{$this->asignacion->id}/documento_{$this->targetLanguage}_V1.docx";
+                        $this->latestVersion = 1;
+                        $this->documentoTraducido = true;
+                    }
+                }
+
+                // Si no existe traducción, buscar documento_V1.docx (extracción sin traducir)
+                if (!$this->documentoTraducido && file_exists("{$dirVersiones}/documento_V1.docx")) {
                     $this->documentoV1Url = config('app.url') . "archivos/traducciones/{$presupuesto->id_pres}/{$this->asignacion->id}/documento_V1.docx";
                     $this->latestVersion = 1;
                     $this->documentoTraducido = true;
-                } else {
-                    // Buscar documento_{idioma}_V1.docx (traducción)
-                    if ($this->targetLanguage) {
-                        $rutaTraducida = "{$dirVersiones}/documento_{$this->targetLanguage}_V1.docx";
-                        if (file_exists($rutaTraducida)) {
-                            $this->documentoV1Url = config('app.url') . "archivos/traducciones/{$presupuesto->id_pres}/{$this->asignacion->id}/documento_{$this->targetLanguage}_V1.docx";
-                            $this->latestVersion = 1;
-                            $this->documentoTraducido = true;
-                        }
-                    }
                 }
             }
         }
