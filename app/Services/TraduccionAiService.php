@@ -343,13 +343,14 @@ class TraduccionAiService
     }
 
     /**
-     * Crea una copia del documento AI para la asignación del traductor
+     * Crea una copia del documento para la asignación del traductor
      *
      * @param PresupAdjAsignacion $asignacion
-     * @param string $rutaDocumentoAi Ruta del documento AI
+     * @param string $rutaDocumentoFuente Ruta del documento fuente (AI o traducido)
+     * @param string|null $idioma Código de idioma (ej: 'es', 'en') para V1 traducidos
      * @return string|null Ruta del documento V1 o null si falla
      */
-    public function crearCopiaParaAsignacion(PresupAdjAsignacion $asignacion, string $rutaDocumentoAi): ?string
+    public function crearCopiaParaAsignacion(PresupAdjAsignacion $asignacion, string $rutaDocumentoFuente, ?string $idioma = null): ?string
     {
         try {
             $presupuesto = $asignacion->adjunto->presupuesto;
@@ -369,22 +370,24 @@ class TraduccionAiService
                 mkdir($rutaAsignacion, 0755, true);
             }
 
-            // Verificar si ya existe documento_V1
-            $rutaV1 = $rutaAsignacion . '/documento_V1.docx';
+            // Determinar nombre del archivo V1
+            $nombreV1 = $idioma ? "documento_{$idioma}_V1.docx" : "documento_V1.docx";
+            $rutaV1 = $rutaAsignacion . '/' . $nombreV1;
+
             if (file_exists($rutaV1)) {
-                return "/{$directorioAsignacion}/documento_V1.docx";
+                return "/{$directorioAsignacion}/{$nombreV1}";
             }
 
-            // Copiar documento AI como V1
-            $rutaAiLocal = public_path($rutaDocumentoAi);
-            if (!file_exists($rutaAiLocal)) {
-                Log::warning("Documento AI no encontrado: {$rutaAiLocal}");
+            // Copiar documento como V1
+            $rutaFuenteLocal = public_path($rutaDocumentoFuente);
+            if (!file_exists($rutaFuenteLocal)) {
+                Log::warning("Documento fuente no encontrado: {$rutaFuenteLocal}");
                 return null;
             }
 
-            if (!copy($rutaAiLocal, $rutaV1)) {
-                Log::error("No se pudo copiar documento AI para asignación", [
-                    'from' => $rutaAiLocal,
+            if (!copy($rutaFuenteLocal, $rutaV1)) {
+                Log::error("No se pudo copiar documento para asignación", [
+                    'from' => $rutaFuenteLocal,
                     'to' => $rutaV1,
                 ]);
                 return null;
@@ -393,9 +396,10 @@ class TraduccionAiService
             Log::info("Copia V1 creada para asignación", [
                 'id_asignacion' => $asignacion->id,
                 'ruta_v1' => $rutaV1,
+                'idioma' => $idioma,
             ]);
 
-            return "/{$directorioAsignacion}/documento_V1.docx";
+            return "/{$directorioAsignacion}/{$nombreV1}";
         } catch (\Exception $e) {
             Log::error("Error creando copia para asignación", [
                 'id_asignacion' => $asignacion->id,

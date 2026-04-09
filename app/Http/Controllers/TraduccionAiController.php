@@ -100,7 +100,7 @@ class TraduccionAiController extends Controller
             // Obtener asignación
             $asignacion = PresupAdjAsignacion::findOrFail($id_asignacion);
 
-            // Obtener idioma destino (debe venir en request)
+            // Obtener idioma destino
             $targetLanguage = request('targetLanguage', 'es');
 
             // Traducir documento AI ya extraído con Azure Translator
@@ -116,33 +116,45 @@ class TraduccionAiController extends Controller
                 ], 500);
             }
 
-            // Crear versión V2 (traducida o fallback) para la asignación
-            $rutaV2 = $this->traduccionAiService->crearVersionV2(
+            // Renombrar documento_traducido.docx a documento_traducido_{idioma}.docx
+            $presupuesto = $asignacion->adjunto->presupuesto;
+            $idDocumento = $asignacion->adjunto->id_adjun;
+            $directorioAi = public_path("archivos/traduccion-ai/{$presupuesto->id_pres}/{$idDocumento}");
+
+            $rutaTraducidaActual = $directorioAi . '/documento_traducido.docx';
+            $rutaTraducidaNueva = $directorioAi . "/documento_traducido_{$targetLanguage}.docx";
+
+            if (file_exists($rutaTraducidaActual) && !file_exists($rutaTraducidaNueva)) {
+                rename($rutaTraducidaActual, $rutaTraducidaNueva);
+            }
+
+            // Crear copia V1 para la asignación con nombre idioma
+            $rutaV1 = $this->traduccionAiService->crearCopiaParaAsignacion(
                 $asignacion,
-                $rutaDocumentoTraducido
+                "/archivos/traduccion-ai/{$presupuesto->id_pres}/{$idDocumento}/documento_traducido_{$targetLanguage}.docx",
+                $targetLanguage
             );
 
-            if (!$rutaV2) {
+            if (!$rutaV1) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Error al crear versión V2',
+                    'message' => 'Error al crear copia para asignación',
                 ], 500);
             }
 
-            Log::info("V2 completada", [
+            Log::info("Traducción completada", [
                 'id_asignacion' => $id_asignacion,
-                'documento_origen' => $rutaDocumentoTraducido,
-                'version_v2' => $rutaV2,
+                'documento_v1' => $rutaV1,
                 'idioma_destino' => $targetLanguage,
             ]);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Versión V2 creada exitosamente',
-                'documentoV2' => $rutaV2,
+                'message' => 'Documento traducido exitosamente',
+                'documentoV1' => $rutaV1,
             ]);
         } catch (\Exception $e) {
-            Log::error("Error en traducción con Azure", [
+            Log::error("Error en traducción", [
                 'id_asignacion' => $id_asignacion,
                 'error' => $e->getMessage(),
             ]);

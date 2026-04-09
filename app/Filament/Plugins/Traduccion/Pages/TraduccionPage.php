@@ -85,21 +85,27 @@ class TraduccionPage extends Page
         $pdfRelativeUrl = $pdfService->obtenerPdfOriginal($this->asignacion);
         $this->pdfOriginalUrl = $pdfRelativeUrl ? config('app.url') . ltrim($pdfRelativeUrl, '/') : null;
 
-        // Obtener documento V1 o V2 si existe (traducción para esta asignación)
+        // Obtener documento V1 si existe (traducción para esta asignación)
         $presupuesto = $this->asignacion->adjunto->presupuesto;
         if ($presupuesto) {
             $dirVersiones = public_path("archivos/traducciones/{$presupuesto->id_pres}/{$this->asignacion->id}");
 
-            // Detectar versión más reciente (V2 > V1)
             if (is_dir($dirVersiones)) {
-                if (file_exists("{$dirVersiones}/documento_V2.docx")) {
-                    $this->documentoV1Url = config('app.url') . "archivos/traducciones/{$presupuesto->id_pres}/{$this->asignacion->id}/documento_V2.docx";
-                    $this->latestVersion = 2;
-                    $this->documentoTraducido = true;
-                } elseif (file_exists("{$dirVersiones}/documento_V1.docx")) {
+                // Buscar documento_V1.docx (extracción sin traducir)
+                if (file_exists("{$dirVersiones}/documento_V1.docx")) {
                     $this->documentoV1Url = config('app.url') . "archivos/traducciones/{$presupuesto->id_pres}/{$this->asignacion->id}/documento_V1.docx";
                     $this->latestVersion = 1;
                     $this->documentoTraducido = true;
+                } else {
+                    // Buscar documento_{idioma}_V1.docx (traducción)
+                    if ($this->targetLanguage) {
+                        $rutaTraducida = "{$dirVersiones}/documento_{$this->targetLanguage}_V1.docx";
+                        if (file_exists($rutaTraducida)) {
+                            $this->documentoV1Url = config('app.url') . "archivos/traducciones/{$presupuesto->id_pres}/{$this->asignacion->id}/documento_{$this->targetLanguage}_V1.docx";
+                            $this->latestVersion = 1;
+                            $this->documentoTraducido = true;
+                        }
+                    }
                 }
             }
         }
