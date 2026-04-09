@@ -230,7 +230,28 @@
         {{-- Panel Central: Editor OnlyOffice --}}
         <div class="traduccion-panel panel-traduccion">
             <div class="traduccion-panel-header" style="display: flex; align-items: center; justify-content: space-between;">
-                <h2>TRADUCCIÓN (V{{ $latestVersion ?? 1 }})</h2>
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <h2>TRADUCCIÓN (V{{ $latestVersion ?? 1 }})</h2>
+                    @if($targetLanguage && $documentoTraducido)
+                        <span style="padding: 0.25rem 0.75rem; background: #e0e7ff; color: #3730a3; border-radius: 0.375rem; font-size: 0.75rem; font-weight: 600;">
+                            @php
+                                $langNames = [
+                                    'es' => 'ESPAÑOL',
+                                    'en' => 'INGLÉS',
+                                    'pt' => 'PORTUGUÉS',
+                                    'fr' => 'FRANCÉS',
+                                    'de' => 'ALEMÁN',
+                                    'it' => 'ITALIANO',
+                                    'ja' => 'JAPONÉS',
+                                    'zh' => 'CHINO',
+                                    'ru' => 'RUSO',
+                                    'ar' => 'ÁRABE',
+                                ];
+                            @endphp
+                            {{ $langNames[$targetLanguage] ?? strtoupper($targetLanguage) }}
+                        </span>
+                    @endif
+                </div>
                 @if($documentoTraducido && $latestVersion === 1)
                     <button id="btn-traducir-ia" type="button" style="padding: 0.5rem 1rem; background: #2563eb; color: white; border: none; border-radius: 0.375rem; font-weight: 600; cursor: pointer; font-size: 0.875rem;">
                         🤖 Traducir con IA
