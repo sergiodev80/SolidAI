@@ -144,7 +144,13 @@ class DocumentConversionService
                 return false;
             }
 
-            // Llamar a Azure Doc Intelligence
+            // Llamar a Azure Doc Intelligence (API asincrónica)
+            // 1. POST el documento para iniciar el análisis
+            Log::info("Submitting PDF to Azure Doc Intelligence API", [
+                'endpoint' => $this->docIntelligenceEndpoint,
+                'file_size' => strlen($fileContent),
+            ]);
+
             $response = Http::withHeaders([
                 'Ocp-Apim-Subscription-Key' => $this->docIntelligenceKey,
                 'Content-Type' => 'application/octet-stream',
@@ -155,40 +161,77 @@ class DocumentConversionService
                 $fileContent
             );
 
-            if (!$response->successful()) {
-                Log::error("Azure Doc Intelligence error", [
+            // Azure Doc Intelligence API es asincrónica y devuelve 202 Accepted
+            // con un header Operation-Location para consultar el resultado
+            if ($response->status() !== 202) {
+                Log::error("Azure Doc Intelligence submit failed", [
                     'status' => $response->status(),
-                    'error' => $response->body(),
+                    'body' => $response->body(),
                 ]);
                 return false;
             }
 
-            // Obtener resultados - manejar UTF-8 malformado
-            $responseBody = $response->body();
-
-            // Limpiar caracteres UTF-8 malformados antes de parsear JSON
-            // 1. Normalizar a UTF-8 válido
-            $responseBody = mb_convert_encoding($responseBody, 'UTF-8', 'UTF-8');
-
-            // 2. Remover caracteres de control (excepto tab, newline, carriage return)
-            $responseBody = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]/u', '', $responseBody);
-
-            // 3. Remover BOM (Byte Order Mark) si existe
-            if (substr($responseBody, 0, 3) === "\xEF\xBB\xBF") {
-                $responseBody = substr($responseBody, 3);
-            }
-
-            $result = json_decode($responseBody, true);
-            if ($result === null && json_last_error() !== JSON_ERROR_NONE) {
-                Log::error("JSON parse error from Azure response", [
-                    'input' => $inputPath,
-                    'error' => json_last_error_msg(),
-                    'json_error_code' => json_last_error(),
-                    'body_length' => strlen($responseBody),
-                    'body_sample' => substr($responseBody, 0, 200),
+            // 2. Obtener la URL de la operación
+            $operationLocation = $response->header('Operation-Location');
+            if (!$operationLocation) {
+                Log::error("No Operation-Location header from Azure", [
+                    'headers' => $response->headers(),
                 ]);
                 return false;
             }
+
+            Log::info("Document submitted, polling result", [
+                'operation_location' => $operationLocation,
+            ]);
+
+            // 3. Polling para obtener los resultados
+            $maxAttempts = 60; // 60 intentos máximo
+            $attempts = 0;
+            $resultJson = null;
+
+            while ($attempts < $maxAttempts) {
+                sleep(1); // Esperar 1 segundo entre intentos
+                $attempts++;
+
+                $pollResponse = Http::withHeaders([
+                    'Ocp-Apim-Subscription-Key' => $this->docIntelligenceKey,
+                ])
+                ->timeout(30)
+                ->get($operationLocation);
+
+                if ($pollResponse->successful()) {
+                    $result = $pollResponse->json();
+
+                    // Verificar si el análisis está completo
+                    if (isset($result['status']) && $result['status'] === 'succeeded') {
+                        $resultJson = $result;
+                        Log::info("Document analysis completed", [
+                            'attempts' => $attempts,
+                        ]);
+                        break;
+                    } elseif (isset($result['status']) && $result['status'] === 'failed') {
+                        Log::error("Azure document analysis failed", [
+                            'error' => $result['error'] ?? 'Unknown error',
+                        ]);
+                        return false;
+                    }
+                } else {
+                    Log::warning("Poll request failed", [
+                        'attempt' => $attempts,
+                        'status' => $pollResponse->status(),
+                    ]);
+                }
+            }
+
+            if (!$resultJson) {
+                Log::error("Azure document analysis timeout", [
+                    'max_attempts' => $maxAttempts,
+                ]);
+                return false;
+            }
+
+            // En este punto, $result contiene los resultados del análisis
+            // Ya hemos obtenido el JSON correctamente vía polling
 
             // Extraer texto y crear DOCX
             $text = $this->extractTextFromDocIntelligenceResult($result);
