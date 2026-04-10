@@ -25,6 +25,8 @@ class TraduccionPage extends Page
     public bool $documentoTraducido = false;
     public bool $documentoEstaTraducido = false; // true si es documento_{idioma}_V1.docx
     public string $targetLanguage = 'es';
+    public bool $esRevisor = false;
+    public ?int $idAsignacionRevisor = null;
 
     protected function getViewData(): array
     {
@@ -38,6 +40,8 @@ class TraduccionPage extends Page
             'documentoEstaTraducido' => $this->documentoEstaTraducido,
             'targetLanguage' => $this->targetLanguage,
             'latestVersion' => $this->latestVersion,
+            'esRevisor' => $this->esRevisor,
+            'idAsignacionRevisor' => $this->idAsignacionRevisor,
         ]);
     }
 
@@ -78,8 +82,9 @@ class TraduccionPage extends Page
         $this->asignacion = PresupAdjAsignacion::findOrFail($id_asignacion);
         $this->idAsignacion = $id_asignacion;
 
-        // Obtener todos los traductores asignados al mismo documento
+        // Obtener todos los traductores asignados al mismo documento (excluir revisores)
         $this->traductoresAsignados = PresupAdjAsignacion::where('id_adjun', $this->asignacion->id_adjun)
+            ->where('rol', 'traductor')
             ->distinct('login')
             ->get(['id', 'login'])
             ->pluck('login', 'id');
@@ -118,6 +123,21 @@ class TraduccionPage extends Page
                     $this->documentoTraducido = true;
                     $this->documentoEstaTraducido = false; // Sin traducir
                 }
+            }
+        }
+
+        // Detectar si el usuario actual es revisor de este documento
+        $userLogin = $permissionService->getUserLogin();
+        if ($userLogin && $this->asignacion->rol !== 'revisor') {
+            // Si accedió a través de una asignación de revisor, marcar como tal
+            $asignacionRevisor = PresupAdjAsignacion::where('id_adjun', $this->asignacion->id_adjun)
+                ->where('login', $userLogin)
+                ->where('rol', 'revisor')
+                ->first();
+
+            if ($asignacionRevisor) {
+                $this->esRevisor = true;
+                $this->idAsignacionRevisor = $asignacionRevisor->id;
             }
         }
     }

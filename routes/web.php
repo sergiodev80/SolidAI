@@ -38,6 +38,16 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::post('/admin/traduccion/eliminar-traduccion/{id_asignacion}', [\App\Http\Controllers\TraduccionAiController::class, 'eliminarTraduccion'])
         ->name('traduccion.eliminar-traduccion');
 
+    // Revisión de asignaciones
+    Route::post('/admin/traduccion/aprobar/{id_asignacion}', [\App\Http\Controllers\TraduccionAiController::class, 'aprobar'])
+        ->name('traduccion.aprobar');
+
+    Route::post('/admin/traduccion/rechazar/{id_asignacion}', [\App\Http\Controllers\TraduccionAiController::class, 'rechazar'])
+        ->name('traduccion.rechazar');
+
+    Route::post('/admin/traduccion/comentar/{id_asignacion}', [\App\Http\Controllers\TraduccionAiController::class, 'comentar'])
+        ->name('traduccion.comentar');
+
     // OnlyOffice Callbacks
     Route::post('/api/onlyoffice/callback', [\App\Http\Controllers\OnlyOfficeCallbackController::class, 'callback'])
         ->name('onlyoffice.callback');

@@ -271,6 +271,158 @@ class TraduccionAiController extends Controller
     }
 
     /**
+     * Aprueba una asignación de revisor
+     * POST /admin/traduccion/aprobar/{id_asignacion}
+     */
+    public function aprobar(int $id_asignacion): JsonResponse
+    {
+        try {
+            // Validar acceso
+            if (!$this->permissionService->canAccessAsignacion($id_asignacion)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No tienes permiso para acceder a esta asignación',
+                ], 403);
+            }
+
+            // Obtener asignación
+            $asignacion = PresupAdjAsignacion::findOrFail($id_asignacion);
+
+            // Cambiar estado a 'Aceptado'
+            $asignacion->update([
+                'estado' => 'Aceptado',
+            ]);
+
+            Log::info("Asignación aprobada", [
+                'id_asignacion' => $id_asignacion,
+                'nuevo_estado' => 'Aceptado',
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Asignación aprobada exitosamente',
+                'estado' => 'Aceptado',
+            ]);
+        } catch (\Exception $e) {
+            Log::error("Error aprobando asignación", [
+                'id_asignacion' => $id_asignacion,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error interno: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Rechaza una asignación de revisor con comentario
+     * POST /admin/traduccion/rechazar/{id_asignacion}
+     */
+    public function rechazar(int $id_asignacion): JsonResponse
+    {
+        try {
+            // Validar acceso
+            if (!$this->permissionService->canAccessAsignacion($id_asignacion)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No tienes permiso para acceder a esta asignación',
+                ], 403);
+            }
+
+            // Obtener asignación
+            $asignacion = PresupAdjAsignacion::findOrFail($id_asignacion);
+
+            // Obtener comentario del request
+            $comentario = request('comentario', '');
+
+            // Cambiar estado a 'Rechazado'
+            $asignacion->update([
+                'estado' => 'Rechazado',
+                'comentario' => $comentario,
+            ]);
+
+            Log::info("Asignación rechazada", [
+                'id_asignacion' => $id_asignacion,
+                'nuevo_estado' => 'Rechazado',
+                'comentario' => $comentario,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Asignación rechazada exitosamente',
+                'estado' => 'Rechazado',
+            ]);
+        } catch (\Exception $e) {
+            Log::error("Error rechazando asignación", [
+                'id_asignacion' => $id_asignacion,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error interno: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Guarda comentario en una asignación
+     * POST /admin/traduccion/comentar/{id_asignacion}
+     */
+    public function comentar(int $id_asignacion): JsonResponse
+    {
+        try {
+            // Validar acceso
+            if (!$this->permissionService->canAccessAsignacion($id_asignacion)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No tienes permiso para acceder a esta asignación',
+                ], 403);
+            }
+
+            // Obtener asignación
+            $asignacion = PresupAdjAsignacion::findOrFail($id_asignacion);
+
+            // Obtener comentario del request
+            $comentario = request('comentario', '');
+
+            if (empty($comentario)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El comentario no puede estar vacío',
+                ], 422);
+            }
+
+            // Guardar comentario
+            $asignacion->update([
+                'comentario' => $comentario,
+            ]);
+
+            Log::info("Comentario guardado en asignación", [
+                'id_asignacion' => $id_asignacion,
+                'comentario' => $comentario,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Comentario guardado exitosamente',
+            ]);
+        } catch (\Exception $e) {
+            Log::error("Error guardando comentario", [
+                'id_asignacion' => $id_asignacion,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error interno: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * Elimina el archivo traducido (V2)
      * POST /admin/traduccion/eliminar-traduccion/{id_asignacion}
      */

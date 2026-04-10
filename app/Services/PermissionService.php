@@ -41,7 +41,19 @@ class PermissionService
             return false;
         }
 
-        return $asignacion->login === $userLogin;
+        // Si es su asignación directa → permitir
+        if ($asignacion->login === $userLogin) {
+            return true;
+        }
+
+        // Si es revisor del mismo documento que la asignación → permitir
+        // Revisor puede ver todas las asignaciones (traductores) del mismo documento
+        $esRevisor = PresupAdjAsignacion::where('id_adjun', $asignacion->id_adjun)
+            ->where('login', $userLogin)
+            ->where('rol', 'revisor')
+            ->exists();
+
+        return $esRevisor;
     }
 
     /**

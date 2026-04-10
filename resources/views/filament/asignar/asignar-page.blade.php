@@ -115,6 +115,9 @@
                                 'Entregado'     => 'estado-entregado',
                                 default         => 'estado-entregado',
                             };
+                            // Revisor accede al trabajo del primer traductor
+                            $primerTraductor = $traductores->first();
+                            $urlRevisor = $primerTraductor ? "/admin/traduccion/{$primerTraductor->id}" : '#';
                         @endphp
                         <div class="asignar-row">
                             <div class="asignar-row-info">
@@ -124,10 +127,11 @@
                             </div>
                             <div style="display: flex; gap: 0.5rem;">
                                 <a
-                                    href="/admin/traduccion/{{ $asig->id }}"
+                                    href="{{ $urlRevisor }}"
                                     class="asignar-action-btn"
                                     title="Ver traducción"
-                                    style="padding: 0.375rem 0.625rem; font-size: 0.875rem; background-color: #3b82f6; color: white; border-radius: 0.375rem; text-decoration: none;"
+                                    style="padding: 0.375rem 0.625rem; font-size: 0.875rem; background-color: #3b82f6; color: white; border-radius: 0.375rem; text-decoration: none; {{ !$primerTraductor ? 'pointer-events: none; opacity: 0.5;' : '' }}"
+                                    @if(!$primerTraductor) onclick="return false;" @endif
                                 >
                                     Ver traducción
                                 </a>
