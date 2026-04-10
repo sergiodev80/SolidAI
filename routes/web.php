@@ -6,6 +6,16 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+// Colaborador a Usuario - rutas públicas (sin autenticación)
+Route::prefix('admin/colabtouser')->name('colaborador.')->group(function () {
+    Route::get('/', function () {
+        return view('filament.plugins.colaboradores-a-usuarios.colaborador-to-user-page');
+    })->name('page');
+
+    Route::post('/crear-acceso', [\App\Filament\Plugins\ColaboradoresAUsuarios\Http\Controllers\ColaboradorToUserController::class, 'crearAcceso'])
+        ->name('crear-acceso');
+});
+
 Route::middleware(['web', 'auth'])->group(function () {
     Route::prefix('admin/presupuestos')->name('presupuestos.')->group(function () {
         Route::get('/documentos/{presupuestoId}', [\App\Http\Controllers\Presupuestos\DocumentosController::class, 'lista'])

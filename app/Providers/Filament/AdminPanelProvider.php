@@ -7,6 +7,7 @@ use App\Filament\Plugins\Colaboradores\Colaboradores;
 use App\Filament\Plugins\Presupuestos\Presupuestos;
 use App\Filament\Plugins\Traduccion\Traduccion;
 use App\Filament\Plugins\Glosario\Glosario;
+use App\Filament\Plugins\ColaboradoresAUsuarios\ColaboradoresAUsuarios;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -45,6 +46,7 @@ class AdminPanelProvider extends PanelProvider
                 Asignar::make(),
                 Traduccion::make(),
                 Glosario::make(),
+                ColaboradoresAUsuarios::make(),
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
