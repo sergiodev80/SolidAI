@@ -34,14 +34,27 @@
             <div class="asignar-card-header">
                 @php
                     $ftpController = new \App\Http\Controllers\FtpFileController();
-                    $pageCount = $ftpController->getPdfPageCount($documento->nombre_archivo);
+                    try {
+                        $pageCount = $ftpController->getPdfPageCount($documento->nombre_archivo);
+                        $archivoEncontrado = true;
+                    } catch (\Exception $e) {
+                        $pageCount = 0;
+                        $archivoEncontrado = false;
+                    }
                 @endphp
-                {{ ($this->previsualizarAction)([
-                    'filename' => $documento->nombre_archivo,
-                    'nombre' => $documento->nombre_archivo,
-                    'paginas' => $pageCount
-                ]) }}
-                {{ ($this->asignarAction)(['id_adjun' => $documento->id_adjun, 'nombre' => $documento->nombre_archivo]) }}
+                @if($archivoEncontrado)
+                    {{ ($this->previsualizarAction)([
+                        'filename' => $documento->nombre_archivo,
+                        'nombre' => $documento->nombre_archivo,
+                        'paginas' => $pageCount
+                    ]) }}
+                    {{ ($this->asignarAction)(['id_adjun' => $documento->id_adjun, 'nombre' => $documento->nombre_archivo]) }}
+                @else
+                    <div style="padding: 1rem; background-color: #fee2e2; border-radius: 0.5rem; color: #991b1b; display: flex; align-items: center; gap: 0.75rem;">
+                        <span>⚠️</span>
+                        <span style="font-weight: 500;">Archivo no encontrado: {{ $documento->nombre_archivo }}</span>
+                    </div>
+                @endif
             </div>
 
             {{-- Traductores | Revisores --}}
@@ -67,12 +80,22 @@
                                 <span class="asignar-row-pages">· p.{{ $asig->pag_inicio }}–{{ $asig->pag_fin }}</span>
                                 <span class="estado-badge {{ $badgeClass }}">{{ $asig->estado }}</span>
                             </div>
-                            <button
-                                wire:click="eliminarAsignacion({{ $asig->id }})"
-                                wire:confirm="¿Quitar esta asignación?"
-                                class="asignar-remove-btn"
-                                title="Quitar"
-                            >✕</button>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <a
+                                    href="/admin/traduccion/{{ $asig->id }}"
+                                    class="asignar-action-btn"
+                                    title="Ver traducción"
+                                    style="padding: 0.375rem 0.625rem; font-size: 0.875rem; background-color: #3b82f6; color: white; border-radius: 0.375rem; text-decoration: none;"
+                                >
+                                    Ver traducción
+                                </a>
+                                <button
+                                    wire:click="eliminarAsignacion({{ $asig->id }})"
+                                    wire:confirm="¿Quitar esta asignación?"
+                                    class="asignar-remove-btn"
+                                    title="Quitar"
+                                >✕</button>
+                            </div>
                         </div>
                     @empty
                         <p class="asignar-empty">sin asignar</p>
@@ -99,12 +122,22 @@
                                 <span class="asignar-row-pages">· p.{{ $asig->pag_inicio }}–{{ $asig->pag_fin }}</span>
                                 <span class="estado-badge {{ $badgeClass }}">{{ $asig->estado }}</span>
                             </div>
-                            <button
-                                wire:click="eliminarAsignacion({{ $asig->id }})"
-                                wire:confirm="¿Quitar esta asignación?"
-                                class="asignar-remove-btn"
-                                title="Quitar"
-                            >✕</button>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <a
+                                    href="/admin/traduccion/{{ $asig->id }}"
+                                    class="asignar-action-btn"
+                                    title="Ver traducción"
+                                    style="padding: 0.375rem 0.625rem; font-size: 0.875rem; background-color: #3b82f6; color: white; border-radius: 0.375rem; text-decoration: none;"
+                                >
+                                    Ver traducción
+                                </a>
+                                <button
+                                    wire:click="eliminarAsignacion({{ $asig->id }})"
+                                    wire:confirm="¿Quitar esta asignación?"
+                                    class="asignar-remove-btn"
+                                    title="Quitar"
+                                >✕</button>
+                            </div>
                         </div>
                     @empty
                         <p class="asignar-empty">sin asignar</p>

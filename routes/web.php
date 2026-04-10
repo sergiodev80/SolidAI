@@ -42,4 +42,12 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::post('/api/onlyoffice/callback', [\App\Http\Controllers\OnlyOfficeCallbackController::class, 'callback'])
         ->name('onlyoffice.callback');
 
+    // API Glosario
+    Route::prefix('api/glosario')->name('api.glosario.')->group(function () {
+        Route::post('/buscar', [\App\Http\Controllers\Api\GlosarioController::class, 'buscar'])->name('buscar');
+        Route::post('/para-traduccion', [\App\Http\Controllers\Api\GlosarioController::class, 'paraTraduccion'])->name('para-traduccion');
+        Route::post('/registrar-uso', [\App\Http\Controllers\Api\GlosarioController::class, 'registrarUso'])->name('registrar-uso');
+        Route::post('/exportar', [\App\Http\Controllers\Api\GlosarioController::class, 'exportar'])->name('exportar');
+    });
+
 });

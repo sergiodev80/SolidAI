@@ -81,6 +81,7 @@ class DocumentConversionService
 
     /**
      * Convierte PDF con texto usando pdf2docx (Python)
+     * Si el PDF es escaneado (sin texto extraible), retorna false para usar Azure OCR
      */
     private function convertPdfWithPdf2Docx(string $inputPath, string $outputPath): bool
     {
@@ -122,12 +123,22 @@ PYTHON;
             @unlink($tempScript);
 
             if ($process->successful() && file_exists($outputPath)) {
-                Log::info("PDF convertido exitosamente con pdf2docx", [
-                    'input' => $inputPath,
-                    'output' => $outputPath,
-                    'size' => filesize($outputPath),
-                ]);
-                return true;
+                // Verificar si el DOCX tiene texto suficiente
+                if ($this->docxHasSufficientText($outputPath)) {
+                    Log::info("PDF convertido exitosamente con pdf2docx (tiene texto)", [
+                        'input' => $inputPath,
+                        'output' => $outputPath,
+                        'size' => filesize($outputPath),
+                    ]);
+                    return true;
+                } else {
+                    // PDF escaneado sin texto extraible - será procesado con Azure OCR
+                    Log::info("PDF escaneado detectado (sin texto extraible), usando Azure OCR", [
+                        'input' => $inputPath,
+                    ]);
+                    @unlink($outputPath);
+                    return false;
+                }
             }
 
             Log::warning("pdf2docx conversion failed", [
@@ -285,7 +296,7 @@ PYTHON;
                 return false;
             }
 
-            // Llamar a Azure Doc Intelligence
+            // Llamar a Azure Doc Intelligence para OCR
             $response = Http::withHeaders([
                 'Ocp-Apim-Subscription-Key' => $this->docIntelligenceKey,
                 'Content-Type' => 'application/octet-stream',
@@ -396,7 +407,8 @@ PYTHON;
     }
 
     /**
-     * Extrae texto del resultado de Azure Doc Intelligence
+     * Extrae texto del resultado de Azure Doc Intelligence (prebuilt-document)
+     * Mantiene mejor la estructura con párrafos, tablas, etc.
      */
     private function extractTextFromDocIntelligenceResult(array $result): string
     {
@@ -409,20 +421,53 @@ PYTHON;
                 'result_keys' => array_keys($result),
             ]);
 
-            if (isset($result['analyzeResult']['content'])) {
-                $text = $result['analyzeResult']['content'];
+            if (!isset($result['analyzeResult'])) {
+                Log::warning("No analyzeResult in response", ['result_keys' => array_keys($result)]);
+                return '';
+            }
+
+            $analyzeResult = $result['analyzeResult'];
+
+            // Opción 1: Usar content si está disponible (completo)
+            if (isset($analyzeResult['content'])) {
+                $text = $analyzeResult['content'];
                 Log::info("Using analyzeResult.content", ['length' => strlen($text)]);
-            } elseif (isset($result['analyzeResult']['paragraphs'])) {
-                Log::info("Using analyzeResult.paragraphs", ['count' => count($result['analyzeResult']['paragraphs'])]);
-                foreach ($result['analyzeResult']['paragraphs'] as $paragraph) {
+            }
+            // Opción 2: Extraer desde paragraphs (prebuilt-document estructura)
+            elseif (isset($analyzeResult['paragraphs'])) {
+                Log::info("Using analyzeResult.paragraphs", ['count' => count($analyzeResult['paragraphs'])]);
+
+                foreach ($analyzeResult['paragraphs'] as $paragraph) {
                     if (isset($paragraph['content'])) {
-                        $text .= $paragraph['content'] . "\n";
+                        $text .= $paragraph['content'];
+                        // Agregar salto de línea si hay espacio vertical significativo
+                        if (isset($paragraph['boundingRegions'])) {
+                            $text .= "\n";
+                        }
                     }
                 }
-            } else {
-                Log::warning("No content found in analyzeResult", [
-                    'analyzeResult_keys' => isset($result['analyzeResult']) ? array_keys($result['analyzeResult']) : [],
+            }
+            // Opción 3: Extraer desde tables si existen
+            if (isset($analyzeResult['tables']) && !empty($text) === false) {
+                Log::info("Processing tables", ['count' => count($analyzeResult['tables'])]);
+
+                foreach ($analyzeResult['tables'] as $table) {
+                    if (isset($table['cells'])) {
+                        foreach ($table['cells'] as $cell) {
+                            if (isset($cell['content'])) {
+                                $text .= $cell['content'] . "\t";
+                            }
+                        }
+                        $text .= "\n";
+                    }
+                }
+            }
+
+            if (empty($text)) {
+                Log::warning("No content extracted from analyzeResult", [
+                    'analyzeResult_keys' => array_keys($analyzeResult),
                 ]);
+                return '';
             }
 
             // Limpiar caracteres UTF-8 malformados
@@ -579,6 +624,67 @@ PYTHON;
                 'input' => $inputPath,
                 'error' => $e->getMessage(),
             ]);
+            return false;
+        }
+    }
+
+    /**
+     * Detecta si un DOCX tiene texto suficiente
+     * Usa unzip para extraer content.xml de forma más confiable
+     * Umbral: más de 100 caracteres de texto
+     */
+    private function docxHasSufficientText(string $docxPath): bool
+    {
+        try {
+            if (!file_exists($docxPath)) {
+                return false;
+            }
+
+            // Un DOCX es un ZIP, extraer content.xml
+            $zipPath = $docxPath;
+            $tempDir = sys_get_temp_dir() . '/' . uniqid('docx_');
+            mkdir($tempDir);
+
+            // Descomprimir DOCX
+            $zip = new \ZipArchive();
+            if ($zip->open($docxPath) !== true) {
+                Log::warning("Cannot open DOCX as ZIP", ['path' => $docxPath]);
+                return false;
+            }
+
+            // Extraer document.xml (contiene el contenido)
+            $documentXml = $zip->getFromName('word/document.xml');
+            $zip->close();
+            rmdir($tempDir);
+
+            if ($documentXml === false) {
+                Log::warning("Cannot find document.xml in DOCX", ['path' => $docxPath]);
+                return false;
+            }
+
+            // Buscar etiquetas de texto <w:t> en el XML
+            // Los textos escaneados solo tienen imágenes y no tienen estas etiquetas
+            preg_match_all('/<w:t[^>]*>([^<]*)<\/w:t>/u', $documentXml, $matches);
+
+            $text = implode('', $matches[1]);
+            $cleanText = trim($text);
+            $textLength = strlen($cleanText);
+            $hasText = $textLength > 100;
+
+            Log::info("DOCX text detection", [
+                'path' => $docxPath,
+                'text_length' => $textLength,
+                'has_sufficient_text' => $hasText,
+                'sample' => substr($cleanText, 0, 100),
+            ]);
+
+            return $hasText;
+        } catch (\Exception $e) {
+            Log::warning("Error detectando texto en DOCX", [
+                'path' => $docxPath,
+                'error' => $e->getMessage(),
+            ]);
+            // Si hay error al detectar, asumir que no tiene texto suficiente
             return false;
         }
     }

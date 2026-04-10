@@ -43,6 +43,10 @@ class PresupuestoResource extends Resource
                     ->sortable()
                     ->searchable(),
 
+                Tables\Columns\ViewColumn::make('acciones_btn')
+                    ->label('Acciones')
+                    ->view('filament.presupuestos.columna-acciones'),
+
                 Tables\Columns\ViewColumn::make('documentos_btn')
                     ->label('Documentos')
                     ->view('filament.presupuestos.columna-documentos'),
