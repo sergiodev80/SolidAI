@@ -6,15 +6,13 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    protected $connection = 'erp';
-
     /**
      * Run the migrations.
      */
     public function up(): void
     {
-        Schema::connection('erp')->table('presup_adj_asignaciones', function (Blueprint $table) {
-            $table->text('comentario')->nullable()->comment('Comentarios del revisor');
+        Schema::table('users', function (Blueprint $table) {
+            $table->string('login')->nullable()->after('email');
         });
     }
 
@@ -23,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::connection('erp')->table('presup_adj_asignaciones', function (Blueprint $table) {
-            $table->dropColumn('comentario');
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropColumn('login');
         });
     }
 };
