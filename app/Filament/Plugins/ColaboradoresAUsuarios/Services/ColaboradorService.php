@@ -63,10 +63,23 @@ class ColaboradorService
             $user->assignRole(['traductor', 'revisor']);
 
             // 7. Enviar email con contraseña
-            \Mail::to($email)->send(new \App\Filament\Plugins\ColaboradoresAUsuarios\Mail\ColaboradorCredentialsMail(
-                $email,
-                $password
-            ));
+            try {
+                \Mail::to($email)->send(new \App\Filament\Plugins\ColaboradoresAUsuarios\Mail\ColaboradorCredentialsMail(
+                    $email,
+                    $password
+                ));
+            } catch (\Exception $emailException) {
+                // Si falla el envío de email, eliminar el usuario creado y retornar error
+                \Log::error('Error al enviar email de credenciales a ' . $email . ': ' . $emailException->getMessage());
+
+                $user->delete();
+
+                return [
+                    'success' => false,
+                    'message' => 'Se ha detectado un error, favor contactar con Administración',
+                    'type' => 'email_error',
+                ];
+            }
 
             return [
                 'success' => true,
@@ -77,7 +90,7 @@ class ColaboradorService
             \Log::error('Error al crear acceso de colaborador: ' . $e->getMessage());
             return [
                 'success' => false,
-                'message' => 'Error al procesar tu solicitud. Intenta más tarde.',
+                'message' => 'Se ha detectado un error, favor contactar con Administración',
                 'type' => 'error',
             ];
         }
