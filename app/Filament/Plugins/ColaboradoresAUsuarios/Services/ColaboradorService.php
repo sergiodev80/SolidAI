@@ -68,11 +68,15 @@ class ColaboradorService
                     $email,
                     $password
                 ));
-            } catch (\Exception $emailException) {
-                // Si falla el envío de email, eliminar el usuario creado y retornar error
-                \Log::error('Error al enviar email de credenciales a ' . $email . ': ' . $emailException->getMessage());
 
-                $user->delete();
+                return [
+                    'success' => true,
+                    'message' => 'Correo enviado a tu email con tu contraseña',
+                    'type' => 'created',
+                ];
+            } catch (\Exception $emailException) {
+                // Usuario creado pero email falló
+                \Log::error('Error al enviar email de credenciales a ' . $email . ': ' . $emailException->getMessage());
 
                 return [
                     'success' => false,
@@ -80,12 +84,6 @@ class ColaboradorService
                     'type' => 'email_error',
                 ];
             }
-
-            return [
-                'success' => true,
-                'message' => 'Correo enviado a tu email con tu contraseña',
-                'type' => 'created',
-            ];
         } catch (\Exception $e) {
             \Log::error('Error al crear acceso de colaborador: ' . $e->getMessage());
             return [
