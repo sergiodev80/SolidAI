@@ -11,7 +11,6 @@ use Filament\Schemas\Components\TextInput;
 use Filament\Schemas\Components\CheckboxList;
 use Filament\Schemas\Schema;
 use Filament\Tables;
-use Filament\Tables\Actions\ViewAction;
 use Filament\Tables\Table;
 
 class UserResource extends Resource
@@ -131,9 +130,7 @@ class UserResource extends Resource
                     ->label('Rol')
                     ->relationship('roles', 'name'),
             ])
-            ->actions([
-                Tables\Actions\ViewAction::make(),
-            ])
+            ->actions([])
             ->defaultSort('created_at', 'desc')
             ->striped()
             ->paginated([25, 50, 100]);
@@ -144,7 +141,6 @@ class UserResource extends Resource
         return [
             'index' => Pages\ListUsers::route('/'),
             'create' => Pages\CreateUser::route('/create'),
-            'view' => Pages\ViewUser::route('/{record}'),
             'edit' => Pages\EditUser::route('/{record}/edit'),
         ];
     }
