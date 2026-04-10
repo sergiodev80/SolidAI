@@ -334,7 +334,7 @@
 
                 {{-- Fila 2: Traductor (ancho completo) --}}
                 <div style="margin-bottom: 1rem;">
-                    <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 0.5rem; font-size: 0.875rem;">Traductor</label>
+                    <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 0.5rem; font-size: 0.875rem;">{{ $esRevisor ? 'Revisor viendo trabajo de' : 'Traductor' }}</label>
                     <select class="traductores-select" onchange="window.location.href='/admin/traduccion/' + this.value">
                         @foreach($traductoresAsignados as $id => $login)
                             <option value="{{ $id }}" @if($id === $asignacion->id) selected @endif>
@@ -398,15 +398,29 @@
 
     {{-- Footer: Botones --}}
     <div class="traduccion-footer">
-        <button class="traduccion-btn btn-primary" onclick="alert('Guardar documento')">
-            Guardar
-        </button>
-        <button class="traduccion-btn btn-info" onclick="alert('Justificar cambios')">
-            Justificar Cambios
-        </button>
-        <button class="traduccion-btn btn-success" onclick="alert('Enviar para revisión')">
-            Enviar para Revisión
-        </button>
+        @if($esRevisor)
+            {{-- Botones para Revisor --}}
+            <button class="traduccion-btn btn-success" onclick="aprobarAsignacion()">
+                ✓ Aprobar
+            </button>
+            <button class="traduccion-btn btn-danger" onclick="mostrarModalRechazar()">
+                ✗ Rechazar
+            </button>
+            <button class="traduccion-btn btn-info" onclick="mostrarModalComentario()">
+                💬 Comentario
+            </button>
+        @else
+            {{-- Botones para Traductor --}}
+            <button class="traduccion-btn btn-primary" onclick="alert('Guardar documento')">
+                Guardar
+            </button>
+            <button class="traduccion-btn btn-info" onclick="alert('Justificar cambios')">
+                Justificar Cambios
+            </button>
+            <button class="traduccion-btn btn-success" onclick="alert('Enviar para revisión')">
+                Enviar para Revisión
+            </button>
+        @endif
     </div>
 
 </div>
@@ -810,6 +824,159 @@
             btn.textContent = originalText;
         }
     });
+
+    {{-- Funciones para revisión (solo si es revisor) --}}
+    @if($esRevisor)
+    const idAsignacionRevisor = {{ $idAsignacionRevisor }};
+
+    async function aprobarAsignacion() {
+        if (!confirm('¿Estás seguro de que quieres aprobar esta asignación?')) return;
+
+        try {
+            const response = await fetch(`/admin/traduccion/aprobar/${idAsignacionRevisor}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                },
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                alert('✓ Asignación aprobada exitosamente');
+                window.location.reload();
+            } else {
+                alert('Error: ' + (data.message || 'Error desconocido'));
+            }
+        } catch (error) {
+            console.error('Error aprobando asignación:', error);
+            alert('Error al aprobar: ' + error.message);
+        }
+    }
+
+    function mostrarModalRechazar() {
+        const modal = document.getElementById('modal-rechazar');
+        if (modal) {
+            modal.style.display = 'flex';
+        }
+    }
+
+    function cerrarModalRechazar() {
+        const modal = document.getElementById('modal-rechazar');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    }
+
+    async function rechazarAsignacion() {
+        const textarea = document.getElementById('modal-rechazo-comentario');
+        const comentario = textarea ? textarea.value.trim() : '';
+
+        if (!comentario) {
+            alert('Por favor, ingresa un motivo para rechazar');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/admin/traduccion/rechazar/${idAsignacionRevisor}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                },
+                body: JSON.stringify({ comentario }),
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                alert('✗ Asignación rechazada con comentario');
+                window.location.reload();
+            } else {
+                alert('Error: ' + (data.message || 'Error desconocido'));
+            }
+        } catch (error) {
+            console.error('Error rechazando asignación:', error);
+            alert('Error al rechazar: ' + error.message);
+        }
+    }
+
+    function mostrarModalComentario() {
+        const modal = document.getElementById('modal-comentario');
+        if (modal) {
+            modal.style.display = 'flex';
+        }
+    }
+
+    function cerrarModalComentario() {
+        const modal = document.getElementById('modal-comentario');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    }
+
+    async function guardarComentario() {
+        const textarea = document.getElementById('modal-comentario-texto');
+        const comentario = textarea ? textarea.value.trim() : '';
+
+        if (!comentario) {
+            alert('Por favor, ingresa un comentario');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/admin/traduccion/comentar/${idAsignacionRevisor}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                },
+                body: JSON.stringify({ comentario }),
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                alert('✓ Comentario guardado exitosamente');
+                cerrarModalComentario();
+                if (textarea) textarea.value = '';
+            } else {
+                alert('Error: ' + (data.message || 'Error desconocido'));
+            }
+        } catch (error) {
+            console.error('Error guardando comentario:', error);
+            alert('Error al guardar: ' + error.message);
+        }
+    }
+    @endif
 </script>
+
+{{-- Modales de revisión --}}
+@if($esRevisor)
+<div id="modal-rechazar" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: white; border-radius: 0.5rem; padding: 2rem; width: 90%; max-width: 500px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
+        <h3 style="margin: 0 0 1rem 0; color: #1f2937; font-size: 1.125rem; font-weight: 600;">Rechazar Asignación</h3>
+        <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 1rem;">Proporciona un motivo para el rechazo:</p>
+        <textarea id="modal-rechazo-comentario" placeholder="Motivo del rechazo..." style="width: 100%; padding: 0.75rem; border: 1px solid #e5e7eb; border-radius: 0.375rem; font-size: 0.875rem; color: #374151; min-height: 120px; font-family: inherit; resize: vertical;"></textarea>
+        <div style="display: flex; gap: 0.5rem; margin-top: 1.5rem; justify-content: flex-end;">
+            <button onclick="cerrarModalRechazar()" style="padding: 0.5rem 1rem; background: #e5e7eb; color: #374151; border: none; border-radius: 0.375rem; cursor: pointer; font-weight: 500;">Cancelar</button>
+            <button onclick="rechazarAsignacion()" style="padding: 0.5rem 1rem; background: #ef4444; color: white; border: none; border-radius: 0.375rem; cursor: pointer; font-weight: 500;">Rechazar</button>
+        </div>
+    </div>
+</div>
+
+<div id="modal-comentario" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: white; border-radius: 0.5rem; padding: 2rem; width: 90%; max-width: 500px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
+        <h3 style="margin: 0 0 1rem 0; color: #1f2937; font-size: 1.125rem; font-weight: 600;">Agregar Comentario</h3>
+        <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 1rem;">Deja un comentario para el traductor:</p>
+        <textarea id="modal-comentario-texto" placeholder="Tu comentario aquí..." style="width: 100%; padding: 0.75rem; border: 1px solid #e5e7eb; border-radius: 0.375rem; font-size: 0.875rem; color: #374151; min-height: 120px; font-family: inherit; resize: vertical;"></textarea>
+        <div style="display: flex; gap: 0.5rem; margin-top: 1.5rem; justify-content: flex-end;">
+            <button onclick="cerrarModalComentario()" style="padding: 0.5rem 1rem; background: #e5e7eb; color: #374151; border: none; border-radius: 0.375rem; cursor: pointer; font-weight: 500;">Cancelar</button>
+            <button onclick="guardarComentario()" style="padding: 0.5rem 1rem; background: #3b82f6; color: white; border: none; border-radius: 0.375rem; cursor: pointer; font-weight: 500;">Guardar</button>
+        </div>
+    </div>
+</div>
+@endif
 
 </x-filament-panels::page>

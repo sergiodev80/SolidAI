@@ -21,6 +21,7 @@ class PresupAdjAsignacion extends Model
         'id_idiom',
         'id_idiom_original',
         'estado',
+        'comentario',
         'created_at',
     ];
 
