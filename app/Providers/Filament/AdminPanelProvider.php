@@ -7,6 +7,7 @@ use App\Filament\Plugins\Colaboradores\Colaboradores;
 use App\Filament\Plugins\Presupuestos\Presupuestos;
 use App\Filament\Plugins\Traduccion\Traduccion;
 use App\Filament\Plugins\Glosario\Glosario;
+use App\Filament\Plugins\Shield\Shield;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -40,6 +41,7 @@ class AdminPanelProvider extends PanelProvider
             ->sidebarFullyCollapsibleOnDesktop()
             ->plugins([
                 FilamentShieldPlugin::make(),
+                Shield::make(),
                 Colaboradores::make(),
                 Presupuestos::make(),
                 Asignar::make(),
