@@ -6,6 +6,11 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+// Login alternativo con opción de colaborador
+Route::get('/admin/login-alt', function () {
+    return view('auth.login-alt');
+})->name('auth.login-alt');
+
 // Colaborador a Usuario - rutas públicas (sin autenticación)
 Route::prefix('admin/colabtouser')->name('colaborador.')->group(function () {
     Route::get('/', function () {
