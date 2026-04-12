@@ -164,25 +164,8 @@ class PluginVersionResource extends Resource
                     ->modalHeading(fn (PluginVersion $record): string => "Restaurar versión {$record->version}")
                     ->modalDescription(fn (PluginVersion $record): string => "¿Estás seguro? Esto desactivará la versión actual y activará la versión {$record->version}.")
                     ->modalButton('Restaurar')
-                    ->action(function (PluginVersion $record, $livewire) {
-                        $service = app(PluginVersionService::class);
-                        if ($service->restoreVersion($record->id)) {
-                            \Filament\Notifications\Notification::make()
-                                ->title('Éxito')
-                                ->body("Plugin restaurado a versión {$record->version}")
-                                ->success()
-                                ->send();
-
-                            // Refrescar la tabla después de restaurar
-                            $livewire->dispatch('refreshTable');
-                        } else {
-                            \Filament\Notifications\Notification::make()
-                                ->title('Error')
-                                ->body('No se pudo restaurar el plugin')
-                                ->danger()
-                                ->send();
-                        }
-                    }),
+                    ->url(fn (PluginVersion $record): string => route('filament.restore-plugin-version', $record->id))
+                    ->openUrlInNewTab(false),
 
                 Actions\Action::make('download')
                     ->label('')

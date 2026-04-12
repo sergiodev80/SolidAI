@@ -56,7 +56,7 @@ class PluginVersionController extends Controller
                 ->danger()
                 ->send();
 
-            return redirect()->back();
+            return redirect('/admin/sistema/plugin-versions?plugin_slug=' . $version->plugin_slug . '&show_all=1');
         }
 
         $service = app(PluginVersionService::class);
@@ -74,6 +74,7 @@ class PluginVersionController extends Controller
                 ->send();
         }
 
-        return redirect()->back();
+        // Redirigir a la página admin de plugin-versions con parámetros
+        return redirect('/admin/sistema/plugin-versions?plugin_slug=' . $version->plugin_slug . '&show_all=1');
     }
 }
