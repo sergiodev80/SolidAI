@@ -74,15 +74,40 @@ class PluginVersionService
     }
 
     /**
+     * Obtiene el nombre correcto del directorio del plugin
+     * Busca en app/Filament/Plugins el directorio que coincida (case-insensitive)
+     */
+    private function getPluginDirectoryName(string $pluginSlug): string
+    {
+        $pluginsPath = base_path("app/Filament/Plugins");
+
+        if (!is_dir($pluginsPath)) {
+            return ucfirst($pluginSlug);
+        }
+
+        $directories = array_map('basename', glob("{$pluginsPath}/*", GLOB_ONLYDIR));
+
+        foreach ($directories as $dir) {
+            if (strtolower($dir) === strtolower($pluginSlug)) {
+                return $dir; // Retorna el nombre exacto del directorio
+            }
+        }
+
+        return ucfirst($pluginSlug); // Fallback si no encuentra
+    }
+
+    /**
      * Crea un backup del plugin
      */
     private function backupPlugin(string $pluginSlug, string $version): ?string
     {
         try {
-            $sourceDir = base_path("app/Filament/Plugins/{$pluginSlug}");
+            // Obtener el nombre correcto del directorio del plugin
+            $pluginDir = $this->getPluginDirectoryName($pluginSlug);
+            $sourceDir = base_path("app/Filament/Plugins/{$pluginDir}");
 
             if (!is_dir($sourceDir)) {
-                Log::warning("Plugin directory not found", ['plugin' => $pluginSlug]);
+                Log::warning("Plugin directory not found", ['plugin' => $pluginSlug, 'path' => $sourceDir]);
                 return null;
             }
 
@@ -154,7 +179,8 @@ class PluginVersionService
             }
 
             // Extraer backup
-            $pluginDir = base_path("app/Filament/Plugins/{$version->plugin_slug}");
+            $pluginDirName = $this->getPluginDirectoryName($version->plugin_slug);
+            $pluginDir = base_path("app/Filament/Plugins/{$pluginDirName}");
 
             // Eliminar directorio actual
             if (is_dir($pluginDir)) {
@@ -222,7 +248,8 @@ class PluginVersionService
     public function createPluginBackup(string $pluginSlug, string $version): ?string
     {
         try {
-            $sourceDir = base_path("app/Filament/Plugins/{$pluginSlug}");
+            $pluginDir = $this->getPluginDirectoryName($pluginSlug);
+            $sourceDir = base_path("app/Filament/Plugins/{$pluginDir}");
 
             if (!is_dir($sourceDir)) {
                 Log::warning("Plugin directory not found for backup", [
