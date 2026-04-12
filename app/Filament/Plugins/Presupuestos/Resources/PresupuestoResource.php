@@ -71,17 +71,25 @@ class PresupuestoResource extends Resource
                     ->sortable()
                     ->searchable(),
 
-                Tables\Columns\TextColumn::make('procesoEst.proc_estado')
+                Tables\Columns\TextColumn::make('estado_proc')
                     ->label('Estado Proceso')
                     ->badge()
-                    ->color(fn (Presupuesto $record): string => match($record->estado_proc) {
+                    ->formatStateUsing(function ($state): string {
+                        return match($state) {
+                            0 => 'Pendiente',
+                            1 => 'En Progreso',
+                            2 => 'Completado',
+                            default => 'Desconocido',
+                        };
+                    })
+                    ->color(fn ($state): string => match($state) {
                         0 => 'warning',    // Amarillo
                         1 => 'info',       // Azul
                         2 => 'success',    // Verde
                         default => 'gray',
                     })
-                    ->sortable('estado_proc')
-                    ->searchable('estado_proc'),
+                    ->sortable()
+                    ->searchable(),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('estado_pres')
