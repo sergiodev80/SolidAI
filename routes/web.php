@@ -22,6 +22,14 @@ Route::prefix('admin/colabtouser')->name('colaborador.')->group(function () {
 });
 
 Route::middleware(['web', 'auth'])->group(function () {
+    // Plugin Versions
+    Route::prefix('filament/plugin-versions')->name('filament.')->group(function () {
+        Route::get('/{versionId}/download', [\App\Http\Controllers\PluginVersionController::class, 'download'])
+            ->name('download-plugin-version');
+        Route::get('/{versionId}/restore', [\App\Http\Controllers\PluginVersionController::class, 'restore'])
+            ->name('restore-plugin-version');
+    });
+
     Route::prefix('admin/presupuestos')->name('presupuestos.')->group(function () {
         Route::get('/documentos/{presupuestoId}', [\App\Http\Controllers\Presupuestos\DocumentosController::class, 'lista'])
             ->name('documentos.lista');

@@ -16,4 +16,9 @@ class Presupuesto extends Model
     {
         return $this->hasMany(PresupAdj::class, 'id_presup', 'id_pres');
     }
+
+    public function procesoEst(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(ProcesoEst::class, 'id_proc_est', 'id_proc_est');
+    }
 }
